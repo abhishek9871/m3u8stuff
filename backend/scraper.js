@@ -127,7 +127,7 @@ app.get('/api/extract', async (req, res) => {
         // Return a PROXY URL so the frontend isn't blocked by CORS
         // We encode the found URL and the referer (provider URL)
         const host = req.get('host');
-        const protocol = req.protocol;
+        const protocol = host.includes('localhost') ? 'http' : 'https';
         // Construct proxy url
         const proxyUrl = `${protocol}://${host}/api/proxy?url=${encodeURIComponent(foundMedia)}`;
 
