@@ -68,7 +68,7 @@ const MovieDetail: React.FC = () => {
   const inWatchlist = isInWatchlist(movie.id);
   const year = movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A';
   const runtime = movie.runtime ? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m` : 'N/A';
-  const streamUrl = `https://vidsrc.xyz/embed/movie/${movie.id}`;
+  const streamUrl = `https://vidsrc-embed.ru/embed/movie/${movie.id}`;
 
   const handleWatchlistToggle = () => {
     if (inWatchlist) {

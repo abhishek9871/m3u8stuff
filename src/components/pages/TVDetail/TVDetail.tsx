@@ -105,7 +105,7 @@ const TVDetail: React.FC = () => {
 
   const inWatchlist = isInWatchlist(show.id);
   const firstAirYear = show.first_air_date ? new Date(show.first_air_date).getFullYear() : 'N/A';
-  const streamUrl = `https://vidsrc.xyz/embed/tv/${show.id}/${currentEpisode.season}/${currentEpisode.episode}`;
+  const streamUrl = `https://vidsrc-embed.ru/embed/tv/${show.id}/${currentEpisode.season}/${currentEpisode.episode}`;
 
   const handleWatchlistToggle = () => {
     if (inWatchlist) {
