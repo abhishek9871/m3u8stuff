@@ -124,17 +124,11 @@ app.get('/api/extract', async (req, res) => {
     page.off('response', responseHandler);
 
     if (foundMedia) {
-        // Return a PROXY URL so the frontend isn't blocked by CORS
-        // We encode the found URL and the referer (provider URL)
-        const host = req.get('host');
-        const protocol = host.includes('localhost') ? 'http' : 'https';
-        // Construct proxy url
-        const proxyUrl = `${protocol}://${host}/api/proxy?url=${encodeURIComponent(foundMedia)}`;
 
-        console.log('[Extract] ✅ Success! Returning proxy URL.');
+        console.log('[Extract] ✅ Success! Returning RAW URL (Frontend will proxy).');
         res.json({
             success: true,
-            url: proxyUrl,
+            m3u8Url: foundMedia,
             provider: usedProvider
         });
     } else {
@@ -185,7 +179,7 @@ async function handlePageInteraction(page, providerName) {
 }
 
 // 🌐 PROXY ENDPOINT
-app.get('/api/proxy', async (req, res) => {
+app.get('/api/proxy/m3u8', async (req, res) => {
     const { url, referer } = req.query;
     if (!url) return res.status(400).send('No URL');
 
