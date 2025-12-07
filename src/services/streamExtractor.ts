@@ -47,10 +47,10 @@ function getScraperUrl(): string {
     // @ts-ignore - Vite's import.meta.env
     const envUrl = import.meta.env?.VITE_SCRAPER_URL as string;
     if (envUrl) return envUrl;
-  } catch {}
-  
+  } catch { }
+
   // Default to localhost for development
-  return 'http://localhost:3001/api/extract';
+  return 'https://abhishek1996-flixnest-scraper.hf.space/api/extract';
 }
 
 const SCRAPER_CONFIG = {
@@ -58,10 +58,10 @@ const SCRAPER_CONFIG = {
   get url(): string {
     return getScraperUrl();
   },
-  
+
   // Timeout for scraper (ms) - longer because it launches browser
   timeout: 45000,
-  
+
   // Enable debug logging
   debug: true,
 };
@@ -76,8 +76,8 @@ function getProxyWorkerUrl(): string {
     // @ts-ignore - Vite's import.meta.env
     const envUrl = import.meta.env?.VITE_PROXY_WORKER_URL as string;
     if (envUrl) return envUrl;
-  } catch {}
-  
+  } catch { }
+
   // Default to localhost for development
   return 'http://localhost:8787';
 }
@@ -87,10 +87,10 @@ const PROXY_CONFIG = {
   get workerUrl(): string {
     return getProxyWorkerUrl();
   },
-  
+
   // Timeout for proxy extraction (ms)
   timeout: 15000,
-  
+
   // Enable debug logging
   debug: true,
 };
@@ -111,7 +111,7 @@ const RUNTIME_CONFIG = {
   get serviceUrl(): string | null {
     return getRuntimeServiceUrl();
   },
-  
+
   // Timeout for runtime extraction (ms)
   timeout: 30000,
 };
@@ -169,12 +169,12 @@ export class StreamExtractor {
     if (request.debugHash) {
       return request.debugHash;
     }
-    
+
     // Priority 2: Global window variable (for console testing)
     if (typeof window !== 'undefined' && window.__FLIXNEST_DEBUG_HASH) {
       return window.__FLIXNEST_DEBUG_HASH;
     }
-    
+
     return null;
   }
 
@@ -184,11 +184,11 @@ export class StreamExtractor {
   private buildEmbedUrl(request: StreamExtractionRequest): string {
     const { type, tmdbId, season, episode } = request;
     let url = `https://vidsrc.cc/v2/embed/${type}/${tmdbId}`;
-    
+
     if (type === 'tv' && season !== undefined && episode !== undefined) {
       url += `/${season}/${episode}`;
     }
-    
+
     return url;
   }
 
@@ -212,20 +212,20 @@ export class StreamExtractor {
    */
   private async getHashesFromRuntime(request: StreamExtractionRequest): Promise<VidsrcServer[]> {
     const { serviceUrl, timeout } = RUNTIME_CONFIG;
-    
+
     // Check if runtime is configured
     if (!serviceUrl) {
       throw new Error('Runtime service URL not configured. Set VITE_EXTRACTOR_SERVICE_URL.');
     }
 
     const { type, tmdbId, season, episode } = request;
-    
+
     // Build query params
     const params = new URLSearchParams({
       tmdbId,
       type,
     });
-    
+
     if (type === 'tv' && season !== undefined && episode !== undefined) {
       params.set('season', String(season));
       params.set('episode', String(episode));
@@ -251,7 +251,7 @@ export class StreamExtractor {
       }
 
       const data = await response.json();
-      
+
       if (!data.success || !Array.isArray(data.servers)) {
         throw new Error(data.error || 'Invalid response from runtime service');
       }
@@ -304,7 +304,7 @@ export class StreamExtractor {
 
       // Build query params
       const params = new URLSearchParams({ tmdbId, type });
-      
+
       if (type === 'tv' && season !== undefined && episode !== undefined) {
         params.set('season', String(season));
         params.set('episode', String(episode));
@@ -354,7 +354,7 @@ export class StreamExtractor {
         };
       }
 
-      this.log('Backend scraper extracted m3u8!', { 
+      this.log('Backend scraper extracted m3u8!', {
         url: data.m3u8Url.substring(0, 80),
         subtitles: data.subtitles?.length || 0,
         cached: data.cached,
@@ -364,7 +364,7 @@ export class StreamExtractor {
       // Proxy the m3u8 URL through our backend to bypass CORS
       const scraperBaseUrl = SCRAPER_CONFIG.url.replace('/api/extract', '');
       const proxiedM3u8Url = `${scraperBaseUrl}/api/proxy/m3u8?url=${encodeURIComponent(data.m3u8Url)}`;
-      
+
       this.log('Using proxied m3u8 URL:', proxiedM3u8Url.substring(0, 80));
 
       // Build ExtractedStream with proxied URL
@@ -390,12 +390,12 @@ export class StreamExtractor {
 
     } catch (error) {
       const isTimeout = error instanceof Error && error.name === 'AbortError';
-      const errMsg = isTimeout 
+      const errMsg = isTimeout
         ? `Scraper timed out after ${SCRAPER_CONFIG.timeout}ms`
         : (error instanceof Error ? error.message : 'Unknown error');
-      
+
       this.log('Backend scraper error:', errMsg);
-      
+
       return {
         success: false,
         streams: [],
@@ -420,12 +420,12 @@ export class StreamExtractor {
   private buildProxyUrl(request: StreamExtractionRequest): string {
     const { type, tmdbId, season, episode } = request;
     const params = new URLSearchParams({ type, id: tmdbId });
-    
+
     if (type === 'tv' && season !== undefined && episode !== undefined) {
       params.set('season', String(season));
       params.set('episode', String(episode));
     }
-    
+
     return `${PROXY_CONFIG.workerUrl}/proxy?${params.toString()}`;
   }
 
@@ -448,11 +448,11 @@ export class StreamExtractor {
   private trySameOriginProxy(request: StreamExtractionRequest): Promise<StreamExtractionResult> {
     return new Promise((resolve) => {
       this.log('Starting same-origin proxy extraction');
-      
+
       const startTime = Date.now();
       let iframe: HTMLIFrameElement | null = null;
       let resolved = false;
-      
+
       // Cleanup function
       const cleanup = () => {
         if (iframe && iframe.parentElement) {
@@ -460,7 +460,7 @@ export class StreamExtractor {
         }
         window.removeEventListener('message', messageHandler);
       };
-      
+
       // Resolve helper (ensures single resolution)
       const resolveOnce = (result: StreamExtractionResult) => {
         if (resolved) return;
@@ -468,7 +468,7 @@ export class StreamExtractor {
         cleanup();
         resolve(result);
       };
-      
+
       // Message handler for postMessage from iframe
       const messageHandler = (event: MessageEvent) => {
         // Only handle messages from our proxy (or localhost for dev)
@@ -476,23 +476,23 @@ export class StreamExtractor {
         if (event.origin !== proxyOrigin && !event.origin.includes('localhost')) {
           return;
         }
-        
+
         const { type, data } = event.data || {};
-        
+
         if (type === 'FLIXNEST_INTERCEPTOR_READY') {
           this.log('Interceptor ready in iframe');
         }
-        
+
         if (type === 'FLIXNEST_SERVERS_FOUND') {
           this.log('Servers found:', data?.count);
         }
-        
+
         if (type === 'FLIXNEST_M3U8_CAPTURED' && data?.m3u8Url) {
-          this.log('M3U8 captured via proxy!', { 
+          this.log('M3U8 captured via proxy!', {
             url: data.m3u8Url.substring(0, 80),
-            subtitles: data.subtitles?.length || 0 
+            subtitles: data.subtitles?.length || 0
           });
-          
+
           const extractedStream: ExtractedStream = {
             m3u8Url: data.m3u8Url,
             subtitles: data.subtitles || [],
@@ -503,7 +503,7 @@ export class StreamExtractor {
               Origin: 'https://vidsrc.cc',
             },
           };
-          
+
           resolveOnce({
             success: true,
             streams: [this.extractedStreamToSource(extractedStream)],
@@ -517,10 +517,10 @@ export class StreamExtractor {
           });
         }
       };
-      
+
       // Listen for messages from iframe
       window.addEventListener('message', messageHandler);
-      
+
       // Timeout handler
       const timeoutId = setTimeout(() => {
         this.log('Proxy extraction timeout');
@@ -540,21 +540,21 @@ export class StreamExtractor {
           },
         });
       }, PROXY_CONFIG.timeout);
-      
+
       // Create hidden iframe
       const proxyUrl = this.buildProxyUrl(request);
       this.log('Loading proxy iframe:', proxyUrl);
-      
+
       iframe = document.createElement('iframe');
       iframe.style.cssText = 'position:absolute;width:1px;height:1px;left:-9999px;opacity:0;pointer-events:none;';
       iframe.src = proxyUrl;
       // Allow scripts and same-origin access
       iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms');
-      
+
       iframe.onload = () => {
         this.log('Proxy iframe loaded, waiting for m3u8 capture...');
       };
-      
+
       iframe.onerror = () => {
         this.log('Proxy iframe failed to load');
         clearTimeout(timeoutId);
@@ -568,7 +568,7 @@ export class StreamExtractor {
           },
         });
       };
-      
+
       document.body.appendChild(iframe);
     });
   }
@@ -593,14 +593,14 @@ export class StreamExtractor {
       // STAGE 1: Check for debug hash (bypass servers API)
       // ========================================
       const debugHash = this.getDebugHash(request);
-      
+
       if (debugHash) {
         this.log('Using debug hash (bypassing servers API)', { hashPreview: debugHash.substring(0, 30) + '...' });
         debugMetadata.stepsCompleted.push('1-debug-hash-detected');
         debugMetadata.usedDebugHash = true;
 
         const result = await vidsrcApi.getSourceByHash(debugHash, 'DebugServer');
-        
+
         if (result.success && result.stream) {
           this.log('Debug hash extraction successful', { m3u8: result.stream.m3u8Url.substring(0, 80) });
           debugMetadata.stepsCompleted.push('2-source-extracted');
@@ -633,9 +633,9 @@ export class StreamExtractor {
       try {
         this.log('Stage 2: Attempting backend Playwright scraper...');
         debugMetadata.stepsCompleted.push('2-scraper-start');
-        
+
         const scraperResult = await this.tryBackendScraper(request);
-        
+
         if (scraperResult.success && scraperResult.extractedStream) {
           this.log('Backend scraper extraction successful!');
           debugMetadata.stepsCompleted.push('2-scraper-success');
@@ -662,9 +662,9 @@ export class StreamExtractor {
       try {
         this.log('Stage 3: Attempting same-origin proxy extraction...');
         debugMetadata.stepsCompleted.push('3-proxy-start');
-        
+
         const proxyResult = await this.trySameOriginProxy(request);
-        
+
         if (proxyResult.success && proxyResult.extractedStream) {
           this.log('Proxy extraction successful!');
           debugMetadata.stepsCompleted.push('3-proxy-success');
@@ -692,20 +692,20 @@ export class StreamExtractor {
       try {
         this.log('Stage 3A: Attempting runtime hash extraction...');
         const servers = await this.getHashesFromRuntime(request);
-        
+
         if (servers.length > 0) {
           debugMetadata.stepsCompleted.push('3a-runtime-hashes-obtained');
           debugMetadata.serversFound = servers.length;
-          
+
           // Try each server until one works
           for (const server of servers) {
             this.log(`Trying server: ${server.name}`, { hashPreview: server.hash.substring(0, 30) });
             const result = await vidsrcApi.getSourceByHash(server.hash, server.name);
-            
+
             if (result.success && result.stream) {
               this.log('Runtime extraction successful', { server: server.name });
               debugMetadata.stepsCompleted.push('3a-source-extracted');
-              
+
               return {
                 success: true,
                 streams: [this.extractedStreamToSource(result.stream)],
@@ -720,7 +720,7 @@ export class StreamExtractor {
         }
       } catch (runtimeError) {
         // Runtime not available - this is expected in most cases
-        this.log('Stage 3A skipped: Runtime not available', 
+        this.log('Stage 3A skipped: Runtime not available',
           runtimeError instanceof Error ? runtimeError.message : 'Unknown');
       }
 
@@ -744,7 +744,7 @@ export class StreamExtractor {
       debugMetadata.stepsCompleted.push('4-fallback-iframe');
 
       const embedUrl = this.buildEmbedUrl(request);
-      
+
       const fallbackStream: StreamSource = {
         url: embedUrl,
         quality: 'iframe',
@@ -787,9 +787,9 @@ export class StreamExtractor {
    */
   async extractWithHash(hash: string, serverName: string = 'ManualTest'): Promise<StreamExtractionResult> {
     this.log('extractWithHash() called', { hashPreview: hash.substring(0, 30), serverName });
-    
+
     const result = await vidsrcApi.getSourceByHash(hash, serverName);
-    
+
     if (result.success && result.stream) {
       return {
         success: true,
