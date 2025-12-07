@@ -1,12 +1,137 @@
-# FlixNest - Project Documentation
+# FlixNest - Complete Technical Documentation
 
-## Overview
-
-**FlixNest** (originally named "SteamHub" then "StreamHub") is a modern streaming web application built with **React 18**, **TypeScript**, **Vite**, and **TailwindCSS**. It aggregates movie and TV show content using the **TMDB API** for metadata and **vidsrc.cc** for streaming.
+> **⚠️ SINGLE SOURCE OF TRUTH**  
+> This document is the authoritative reference for the FlixNest project.  
+> Last Updated: **December 8, 2025**  
+> Status: **✅ PRODUCTION - FULLY WORKING**
 
 ---
 
-## Tech Stack
+## Table of Contents
+
+1. [Executive Summary](#1-executive-summary)
+2. [Production Architecture](#2-production-architecture)
+3. [Tech Stack](#3-tech-stack)
+4. [Project Structure](#4-project-structure)
+5. [The Core Problem & Solution](#5-the-core-problem--solution)
+6. [Backend Scraper (Hugging Face Spaces)](#6-backend-scraper-hugging-face-spaces)
+7. [Frontend Integration](#7-frontend-integration)
+8. [Critical Fixes Applied](#8-critical-fixes-applied)
+9. [Deployment Guide](#9-deployment-guide)
+10. [API Reference](#10-api-reference)
+11. [Failed Approaches (What NOT to Do)](#11-failed-approaches-what-not-to-do)
+12. [Troubleshooting Guide](#12-troubleshooting-guide)
+13. [Environment Variables](#13-environment-variables)
+14. [Local Development](#14-local-development)
+15. [Design System](#15-design-system)
+
+---
+
+## 1. Executive Summary
+
+### What is FlixNest?
+
+**FlixNest** is a modern streaming web application that provides:
+- Movie and TV show browsing via TMDB API
+- **Native HLS video playback** with quality selection (360p, 720p, 1080p)
+- Watchlist and episode tracking
+- Ad-free viewing experience
+
+### Production URLs
+
+| Component | URL | Purpose |
+|-----------|-----|---------|
+| **Frontend** | `https://flixnest.pages.dev` | React app on Cloudflare Pages |
+| **Backend** | `https://abhishek1996-flixnest-scraper.hf.space` | Puppeteer scraper on Hugging Face Spaces |
+
+### What Actually Works (Verified December 8, 2025)
+
+✅ **M3U8 Extraction** - Backend extracts streaming URLs from `vidsrc-embed.ru`  
+✅ **HLS Playback** - hls.js plays video with 3 quality levels  
+✅ **Proxy Chain** - All requests routed through backend to bypass CORS  
+✅ **Referer Handling** - Correct referer (`cloudnestra.com`) passed for auth  
+✅ **HTTPS Enforcement** - Proxy URLs use HTTPS to avoid Mixed Content errors  
+
+---
+
+## 2. Production Architecture
+
+### System Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              USER BROWSER                                   │
+│                                                                             │
+│   1. User visits https://flixnest.pages.dev                                 │
+│   2. Clicks "Play" on a movie/TV show                                       │
+│   3. Frontend calls backend extraction API                                  │
+└─────────────────────────────────────────────────────────┬───────────────────┘
+                                                          │
+                                                          ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    CLOUDFLARE PAGES (Frontend)                              │
+│                    https://flixnest.pages.dev                               │
+│                                                                             │
+│   React 18 + TypeScript + Vite + TailwindCSS                                │
+│   ├── src/services/streamExtractor.ts  → Calls backend API                  │
+│   ├── src/components/common/NativePlayer.tsx → hls.js video player          │
+│   └── src/components/pages/MovieDetail/MovieDetail.tsx → Play button logic  │
+└─────────────────────────────────────────────────────────┬───────────────────┘
+                                                          │
+                          GET /api/extract?tmdbId=X&type=movie
+                                                          │
+                                                          ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    HUGGING FACE SPACES (Backend)                            │
+│                    https://abhishek1996-flixnest-scraper.hf.space           │
+│                    Port: 7860                                               │
+│                                                                             │
+│   Node.js + Express + puppeteer-real-browser                                │
+│   └── backend/scraper.js                                                    │
+│       ├── GET /api/extract      → Launch Puppeteer, extract M3U8            │
+│       ├── GET /api/proxy/m3u8   → Fetch & rewrite M3U8 playlists            │
+│       ├── GET /api/proxy/segment→ Proxy .ts video segments                  │
+│       └── GET /health           → Health check                              │
+└─────────────────────────────────────────────────────────┬───────────────────┘
+                                                          │
+                          Puppeteer navigates to embed page
+                                                          │
+                                                          ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         VIDEO PROVIDER                                      │
+│                         vidsrc-embed.ru                                     │
+│                                                                             │
+│   Embed URL: https://vidsrc-embed.ru/embed/movie/{tmdbId}                   │
+│   Streams from: cloudnestra.com → thrumbleandjaxon.com                      │
+│   M3U8 Format: HLS with 3 quality levels (360p, 720p, 1080p)                │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Data Flow for Video Playback
+
+```
+Step 1: User clicks Play
+        ↓
+Step 2: Frontend calls: GET https://abhishek1996-flixnest-scraper.hf.space/api/extract?tmdbId=701387&type=movie
+        ↓
+Step 3: Backend launches Puppeteer, navigates to vidsrc-embed.ru/embed/movie/701387
+        ↓
+Step 4: Backend intercepts network response containing M3U8 URL
+        Returns: { success: true, m3u8Url: "https://tmstr4.thrumbleandjaxon.com/...", referer: "https://cloudnestra.com/" }
+        ↓
+Step 5: Frontend constructs proxied URL:
+        https://abhishek1996-flixnest-scraper.hf.space/api/proxy/m3u8?url={encodedM3u8}&referer={encodedReferer}
+        ↓
+Step 6: hls.js loads the proxied M3U8, backend rewrites all URLs to go through proxy
+        ↓
+Step 7: Video plays with quality selection!
+```
+
+---
+
+## 3. Tech Stack
+
+### Frontend (Cloudflare Pages)
 
 | Technology | Version | Purpose |
 |------------|---------|---------|
@@ -15,354 +140,869 @@
 | Vite | ^6.2.0 | Build Tool & Dev Server |
 | TailwindCSS | CDN | Styling |
 | React Router DOM | 6.23.1 | Client-side Routing (HashRouter) |
+| hls.js | ^1.5.7 | HLS Video Playback |
 | Axios | 1.7.2 | HTTP Client |
 | React Toastify | 10.0.5 | Toast Notifications |
-| React Icons | ^5.5.0 | Icon Library (FontAwesome) |
+
+### Backend (Hugging Face Spaces)
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Node.js | 18+ | Runtime |
+| Express | ^4.18.2 | HTTP Server |
+| puppeteer-real-browser | ^1.3.10 | Browser automation (bypasses Cloudflare) |
+| Axios | ^1.6.2 | HTTP requests for proxying |
+| CORS | ^2.8.5 | Cross-origin support |
+
+### Why These Choices?
+
+1. **puppeteer-real-browser over standard Puppeteer**  
+   - Standard Puppeteer gets blocked by Cloudflare  
+   - `puppeteer-real-browser` uses `turnstile: true` for auto-solving captchas  
+   - Includes fingerprint evasion to appear as real browser
+
+2. **Hugging Face Spaces over Cloudflare Workers**  
+   - Workers have 10ms CPU limit (Puppeteer needs seconds)  
+   - HF Spaces provides free Docker containers with full Node.js  
+   - Supports Xvfb for headless browser rendering
+
+3. **hls.js over native video**  
+   - Works in Chrome, Firefox, Edge (native HLS only in Safari)  
+   - Provides quality level switching API  
+   - Better error recovery
 
 ---
 
-## Project Structure
+## 4. Project Structure
 
 ```
 FlixNest/
-├── src/
+├── backend/                          # Backend scraper (deployed to HF Spaces)
+│   └── scraper.js                    # Express server with Puppeteer extraction
+│
+├── src/                              # Frontend source (deployed to Cloudflare)
 │   ├── components/
-│   │   ├── common/          # Reusable components
-│   │   │   ├── Button.tsx
+│   │   ├── common/
+│   │   │   ├── NativePlayer.tsx      # ⭐ hls.js video player with quality selector
+│   │   │   ├── NativePlayer.css      # Player styles
 │   │   │   ├── ContentCard.tsx
-│   │   │   ├── ErrorBoundary.tsx
 │   │   │   ├── Loader.tsx
 │   │   │   └── SkeletonCard.tsx
-│   │   ├── layout/          # Layout components
+│   │   ├── layout/
 │   │   │   ├── AppLayout.tsx
 │   │   │   └── Header.tsx
-│   │   └── pages/           # Page components
-│   │       ├── Home/
-│   │       │   ├── Home.tsx
-│   │       │   ├── HeroSection.tsx
-│   │       │   └── ContentCarousel.tsx
+│   │   └── pages/
 │   │       ├── MovieDetail/
-│   │       │   ├── MovieDetail.tsx
-│   │       │   └── CastCard.tsx
+│   │       │   └── MovieDetail.tsx   # ⭐ Calls streamExtractor on Play click
 │   │       ├── TVDetail/
-│   │       │   ├── TVDetail.tsx
-│   │       │   └── EpisodeCard.tsx
+│   │       │   └── TVDetail.tsx      # ⭐ Calls streamExtractor for TV episodes
+│   │       ├── Home/
 │   │       ├── Settings/
-│   │       │   └── Settings.tsx
-│   │       ├── PlayerPage.tsx
 │   │       ├── SearchPage.tsx
 │   │       └── WatchlistPage.tsx
-│   ├── context/             # React Context providers
+│   │
+│   ├── services/
+│   │   ├── streamExtractor.ts        # ⭐ Calls backend /api/extract, builds proxy URL
+│   │   ├── tmdb.ts                   # TMDB API client
+│   │   └── vidsrc.ts                 # Legacy iframe URL builder
+│   │
+│   ├── types/
+│   │   └── stream.ts                 # TypeScript interfaces for streams
+│   │
+│   ├── context/
 │   │   ├── WatchlistContext.tsx
 │   │   └── WatchedEpisodesContext.tsx
-│   ├── hooks/               # Custom hooks
-│   │   └── useLocalStorage.ts
-│   ├── services/            # API service modules
-│   │   ├── tmdb.ts
-│   │   ├── vidsrc.ts
-│   │   └── storage.ts
-│   ├── utils/               # Utility functions
-│   │   └── constants.ts
-│   ├── types.ts             # TypeScript type definitions
-│   └── App.tsx              # Main application component
-├── index.html               # Main HTML file
-├── index.tsx                # React entry point
+│   │
+│   └── App.tsx
+│
+├── DOCUMENTATION.md                  # ⭐ THIS FILE - Single source of truth
 ├── package.json
-├── tsconfig.json
 ├── vite.config.ts
-└── README.md
+└── wrangler.toml                     # Cloudflare Pages config
+```
+
+### Key Files Explained
+
+| File | Purpose | Critical Code |
+|------|---------|---------------|
+| `backend/scraper.js` | Backend server | Lines 232: Force HTTPS in proxy URLs |
+| `src/services/streamExtractor.ts` | Frontend extraction | Line 367: Build proxied M3U8 URL with referer |
+| `src/components/common/NativePlayer.tsx` | Video player | hls.js initialization with quality selector |
+| `src/components/pages/MovieDetail/MovieDetail.tsx` | Movie page | `handlePlayClick()` triggers extraction |
+
+---
+
+## 5. The Core Problem & Solution
+
+### The Problem
+
+**Goal:** Play videos natively in FlixNest with quality selection, instead of embedding third-party iframes full of ads.
+
+**Challenge:** Video providers like `vidsrc-embed.ru` have multiple protections:
+
+1. **CORS** - Browser blocks cross-origin requests to their APIs
+2. **Origin Validation** - Server checks `Origin` header matches their domain
+3. **Referer Validation** - M3U8 servers require correct `Referer` header
+4. **Cloudflare Protection** - Bot detection blocks automated requests
+
+### The Solution
+
+**Run a real browser on the backend** that:
+1. Navigates to the embed page like a real user
+2. Intercepts the M3U8 URL from network responses
+3. Captures the correct `Referer` header
+4. Proxies all requests through our server with proper headers
+
+### Why This Works
+
+```
+Frontend (Browser)                 Backend (Puppeteer)              Video Provider
+       │                                   │                              │
+       │ Can't call APIs directly          │ Real browser - no CORS       │
+       │ (CORS blocks it)                  │ (first-party requests)       │
+       │                                   │                              │
+       │ GET /api/extract ─────────────────►│                              │
+       │                                   │ goto(embed page) ────────────►│
+       │                                   │                              │
+       │                                   │◄─────── M3U8 URL in response │
+       │                                   │         + Referer captured   │
+       │◄─────────── { m3u8Url, referer } ─┤                              │
+       │                                   │                              │
+       │ hls.js loads proxied URL          │                              │
+       │ GET /api/proxy/m3u8 ──────────────►│ fetch(m3u8, {Referer}) ─────►│
+       │                                   │◄─────────── M3U8 content ────│
+       │◄─────────── Rewritten M3U8 ───────┤                              │
+       │                                   │                              │
+       │ GET /api/proxy/segment ───────────►│ fetch(segment, {Referer}) ──►│
+       │                                   │◄─────────── Video data ──────│
+       │◄─────────── Video stream ─────────┤                              │
+       │                                   │                              │
+     VIDEO PLAYS! 🎬
 ```
 
 ---
 
-## Features
+## 6. Backend Scraper (Hugging Face Spaces)
 
-### Core Features
-1. **Home Page** - Hero carousel with trending content + multiple content carousels
-2. **Movie Details** - Full movie information, cast, similar movies, play button
-3. **TV Show Details** - Show info, season/episode selector, watch progress tracking
-4. **Video Player** - Embedded vidsrc.cc player for streaming
-5. **Search** - Multi-search for movies and TV shows
-6. **Watchlist** - Save movies/shows to personal watchlist
-7. **Episode Tracking** - Mark TV episodes as watched
-8. **Settings** - Clear watchlist and watch history
+### File: `backend/scraper.js`
 
-### Technical Features
-- **Lazy Loading** - Route-based code splitting for performance
-- **Error Boundary** - Graceful error handling
-- **localStorage Persistence** - Watchlist and watch history saved locally
-- **Cross-tab Sync** - localStorage changes sync across browser tabs
-- **Mobile Responsive** - Full mobile support with hamburger menu
-- **Toast Notifications** - User feedback for actions
+**Total Lines:** 328  
+**Deployed To:** `https://abhishek1996-flixnest-scraper.hf.space`  
+**Port:** 7860
+
+### Provider Configuration
+
+```javascript
+const PROVIDERS = [
+    {
+        name: 'vidsrc-embed.ru',
+        getUrl: (id, type, s, e) => type === 'movie'
+            ? `https://vidsrc-embed.ru/embed/movie/${id}`
+            : `https://vidsrc-embed.ru/embed/tv/${id}/${s}/${e}`
+    },
+    {
+        name: 'vidsrc.cc',
+        getUrl: (id, type, s, e) => type === 'movie'
+            ? `https://vidsrc.cc/v2/embed/movie/${id}`
+            : `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`
+    }
+];
+```
+
+> **Note:** `vidsrc-embed.ru` is the PRIMARY provider. `vidsrc.cc` is a fallback.
+
+### Browser Session Management
+
+```javascript
+let browserInstance = null;
+let pageInstance = null;
+
+async function getBrowser() {
+    if (browserInstance && pageInstance && !pageInstance.isClosed()) {
+        return { browser: browserInstance, page: pageInstance };
+    }
+
+    const { browser, page } = await connect({
+        headless: false,     // Required for Xvfb
+        turnstile: true,     // Auto-solve Cloudflare captchas
+        fingerprint: true,   // Evade bot detection
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--window-size=1280,720',
+            '--disable-dev-shm-usage'
+        ]
+    });
+
+    browserInstance = browser;
+    pageInstance = page;
+    
+    await page.setRequestInterception(true);
+    page.on('request', req => req.continue());
+
+    return { browser, page };
+}
+```
+
+### Extraction Logic
+
+```javascript
+app.get('/api/extract', async (req, res) => {
+    const { tmdbId, season, episode, type } = req.query;
+    
+    let foundMedia = null;
+    let capturedReferer = null;
+
+    // Network interception - capture M3U8 URL
+    const responseHandler = (response) => {
+        const url = response.url();
+        if ((url.includes('.m3u8') || url.includes('.mp4')) && !url.includes('sk-')) {
+            foundMedia = url;
+            capturedReferer = response.request().headers()['referer'] || page.url();
+        }
+    };
+    page.on('response', responseHandler);
+
+    // Try each provider
+    for (const provider of PROVIDERS) {
+        const targetUrl = provider.getUrl(tmdbId, type, season, episode);
+        await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 25000 });
+        await handlePageInteraction(page, provider.name);
+        
+        // Wait up to 15 seconds for M3U8
+        let attempts = 0;
+        while (!foundMedia && attempts < 15) {
+            await new Promise(r => setTimeout(r, 1000));
+            attempts++;
+        }
+        
+        if (foundMedia) break;
+    }
+
+    // Return result with referer
+    res.json({
+        success: true,
+        m3u8Url: foundMedia,
+        provider: usedProvider,
+        referer: capturedReferer  // ⭐ CRITICAL: Frontend needs this for proxy
+    });
+});
+```
+
+### M3U8 Proxy with URL Rewriting
+
+```javascript
+app.get('/api/proxy/m3u8', async (req, res) => {
+    const { url, referer } = req.query;
+    const decodedUrl = decodeURIComponent(url);
+    const decodedReferer = referer ? decodeURIComponent(referer) : 'https://vidsrc-embed.ru/';
+
+    // Fetch M3U8 with correct headers
+    const response = await axios({
+        method: 'get',
+        url: decodedUrl,
+        headers: {
+            'User-Agent': 'Mozilla/5.0...',
+            'Referer': decodedReferer,           // ⭐ CRITICAL
+            'Origin': new URL(decodedReferer).origin
+        }
+    });
+
+    // ⭐ CRITICAL FIX: Force HTTPS (HF Spaces reports 'http' internally)
+    const proxyBase = `https://${req.get('host')}`;
+
+    // Rewrite all URLs in M3U8 to go through our proxy
+    const rewrittenLines = lines.map(line => {
+        if (line.includes('.m3u8')) {
+            return `${proxyBase}/api/proxy/m3u8?url=${encodeURIComponent(absoluteUrl)}&referer=${encodeURIComponent(decodedReferer)}`;
+        } else {
+            return `${proxyBase}/api/proxy/segment?url=${encodeURIComponent(absoluteUrl)}&referer=${encodeURIComponent(decodedReferer)}`;
+        }
+    });
+
+    res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
+    res.send(rewrittenContent);
+});
+```
+
+### Segment Proxy (Binary Passthrough)
+
+```javascript
+app.get('/api/proxy/segment', async (req, res) => {
+    const { url, referer } = req.query;
+    
+    const response = await axios({
+        method: 'get',
+        url: decodeURIComponent(url),
+        responseType: 'stream',
+        headers: {
+            'Referer': decodeURIComponent(referer),
+            'Origin': new URL(decodeURIComponent(referer)).origin
+        }
+    });
+
+    response.data.pipe(res);
+});
+```
 
 ---
 
-## Routes
+## 7. Frontend Integration
 
-| Route | Component | Description |
-|-------|-----------|-------------|
-| `/` | Home | Landing page with content carousels |
-| `/movie/:id` | MovieDetail | Movie details page |
-| `/tv/:id` | TVDetail | TV show details page |
-| `/play/:type/:id` | PlayerPage | Video player (type: movie/tv) |
-| `/search` | SearchPage | Search results page |
-| `/watchlist` | WatchlistPage | User's saved content |
-| `/settings` | SettingsPage | App settings and data management |
+### Stream Extractor Service
+
+**File:** `src/services/streamExtractor.ts`
+
+```typescript
+const SCRAPER_CONFIG = {
+  get url(): string {
+    return 'https://abhishek1996-flixnest-scraper.hf.space/api/extract';
+  },
+  timeout: 45000,
+};
+
+async tryBackendScraper(request: StreamExtractionRequest): Promise<StreamExtractionResult> {
+    const params = new URLSearchParams({ tmdbId, type });
+    if (type === 'tv') {
+        params.set('season', String(season));
+        params.set('episode', String(episode));
+    }
+
+    const response = await fetch(`${SCRAPER_CONFIG.url}?${params}`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+    });
+
+    const data = await response.json();
+    
+    // ⭐ Build proxied URL with referer parameter
+    const scraperBaseUrl = SCRAPER_CONFIG.url.replace('/api/extract', '');
+    const refererParam = data.referer ? `&referer=${encodeURIComponent(data.referer)}` : '';
+    const proxiedM3u8Url = `${scraperBaseUrl}/api/proxy/m3u8?url=${encodeURIComponent(data.m3u8Url)}${refererParam}`;
+
+    return {
+        success: true,
+        extractedStream: {
+            m3u8Url: proxiedM3u8Url,
+            subtitles: data.subtitles || [],
+            provider: 'vidsrc',
+        },
+    };
+}
+```
+
+### NativePlayer Component
+
+**File:** `src/components/common/NativePlayer.tsx`
+
+```typescript
+import Hls from 'hls.js';
+
+const NativePlayer: React.FC<Props> = ({ extractedStream, onClose }) => {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const hlsRef = useRef<Hls | null>(null);
+    const [quality, setQuality] = useState<string>('Auto');
+
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video || !extractedStream.m3u8Url) return;
+
+        // Prefer hls.js (works in Chrome, Firefox, Edge)
+        if (Hls.isSupported()) {
+            const hls = new Hls({
+                enableWorker: true,
+                lowLatencyMode: false,
+            });
+            hlsRef.current = hls;
+            hls.loadSource(extractedStream.m3u8Url);
+            hls.attachMedia(video);
+
+            hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
+                // Quality levels available: e.g., [360p, 720p, 1080p]
+                console.log('[NativePlayer] Quality levels:', data.levels.length);
+            });
+
+            hls.on(Hls.Events.ERROR, (_, data) => {
+                if (data.fatal) {
+                    hls.destroy();
+                }
+            });
+        }
+        // Safari fallback (native HLS)
+        else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = extractedStream.m3u8Url;
+        }
+
+        return () => hlsRef.current?.destroy();
+    }, [extractedStream.m3u8Url]);
+
+    return (
+        <div className="native-player">
+            <video ref={videoRef} controls autoPlay />
+            <QualitySelector quality={quality} onChange={setQuality} />
+        </div>
+    );
+};
+```
+
+### MovieDetail Integration
+
+**File:** `src/components/pages/MovieDetail/MovieDetail.tsx`
+
+```typescript
+const handlePlayClick = async () => {
+    setIsPlaying(true);
+    setExtracting(true);
+
+    const result = await streamExtractor.extract({
+        type: 'movie',
+        tmdbId: movie.id.toString(),
+    });
+
+    setExtracting(false);
+
+    if (result.success && result.extractedStream) {
+        setExtractedStream(result.extractedStream);
+        setUseFallbackIframe(false);
+    } else {
+        // Fallback to iframe if extraction fails
+        setUseFallbackIframe(true);
+    }
+};
+
+// In render:
+{isPlaying && extractedStream && !useFallbackIframe && (
+    <NativePlayer
+        extractedStream={extractedStream}
+        onClose={() => setIsPlaying(false)}
+    />
+)}
+```
 
 ---
 
-## API Services
+## 8. Critical Fixes Applied
 
-### TMDB API (`src/services/tmdb.ts`)
-- `getTrending()` - Get trending movies/TV shows
-- `getTrendingAll()` - Get all trending content
-- `getPopularMovies()` - Get popular movies
-- `getTopRatedMovies()` - Get top-rated movies
-- `getPopularTVShows()` - Get popular TV shows
-- `getTopRatedTVShows()` - Get top-rated TV shows
-- `getMovieDetails()` - Get movie details with credits and similar
-- `getTVShowDetails()` - Get TV show details with credits and similar
-- `getSeasonDetails()` - Get season episodes
-- `searchMulti()` - Search movies and TV shows
+### Fix 1: HTTPS Enforcement (Mixed Content Error)
 
-### VidSrc Service (`src/services/vidsrc.ts`)
-- `getMovieStreamUrl()` - Get streaming URL for movies
-- `getTvStreamUrl()` - Get streaming URL for TV episodes
+**Problem:** Browser blocked video because proxy returned `http://` URLs while frontend is on `https://`.
+
+**Root Cause:** Hugging Face Spaces runs behind a reverse proxy. Express's `req.protocol` returns `http` (internal) even though public access is via HTTPS.
+
+**Fix Location:** `backend/scraper.js`, Line 232
+
+```javascript
+// ❌ BEFORE (broken):
+const proxyBase = `${req.protocol}://${req.get('host')}`;
+
+// ✅ AFTER (working):
+const proxyBase = `https://${req.get('host')}`;
+```
+
+### Fix 2: Referer Capture & Passthrough
+
+**Problem:** M3U8 server returned 403 Forbidden because referer was wrong.
+
+**Root Cause:** The M3U8 server (`thrumbleandjaxon.com`) validates that requests come from `cloudnestra.com`, not directly.
+
+**Fix:** Capture referer during extraction, pass through entire proxy chain.
+
+```javascript
+// backend/scraper.js - Capture during extraction
+const responseHandler = (response) => {
+    if (url.includes('.m3u8')) {
+        capturedReferer = response.request().headers()['referer'] || page.url();
+    }
+};
+
+// Return referer to frontend
+res.json({ m3u8Url, referer: capturedReferer });
+
+// Proxy uses referer
+const response = await axios({
+    url: decodedUrl,
+    headers: { 'Referer': decodedReferer }
+});
+```
+
+### Fix 3: URL Rewriting in M3U8
+
+**Problem:** hls.js got 404 errors because M3U8 contained relative URLs that couldn't be resolved.
+
+**Fix:** Backend rewrites ALL URLs (segments, playlists, keys) to absolute proxied URLs.
+
+```javascript
+// Rewrite relative URLs to absolute
+const absoluteUrl = trimmed.startsWith('http') ? trimmed : new URL(trimmed, baseUrl).href;
+
+// Route through proxy
+return `${proxyBase}/api/proxy/segment?url=${encodeURIComponent(absoluteUrl)}&referer=${encodeURIComponent(referer)}`;
+```
+
+### Fix 4: puppeteer-real-browser for Cloudflare Bypass
+
+**Problem:** Standard Puppeteer got blocked by Cloudflare with "Just a moment..." page.
+
+**Fix:** Use `puppeteer-real-browser` with turnstile and fingerprint evasion.
+
+```javascript
+import { connect } from 'puppeteer-real-browser';
+
+const { browser, page } = await connect({
+    headless: false,
+    turnstile: true,      // Auto-solve Cloudflare
+    fingerprint: true,    // Evade bot detection
+});
+```
 
 ---
 
-## Design System
+## 9. Deployment Guide
+
+### Frontend Deployment (Cloudflare Pages)
+
+```bash
+# Build the project
+npm run build
+
+# Deploy to production
+npx wrangler pages deploy dist --project-name=flixnest --branch=production
+```
+
+**Production URL:** `https://flixnest.pages.dev`
+
+### Backend Deployment (Hugging Face Spaces)
+
+1. Create a new Space at `https://huggingface.co/spaces`
+2. Choose **Docker** as the SDK
+3. Upload the `backend/` folder
+4. Create `Dockerfile`:
+
+```dockerfile
+FROM node:18-slim
+
+# Install dependencies for Puppeteer
+RUN apt-get update && apt-get install -y \
+    chromium \
+    fonts-liberation \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libcups2 \
+    libdbus-1-3 \
+    libdrm2 \
+    libgbm1 \
+    libgtk-3-0 \
+    libnspr4 \
+    libnss3 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    xdg-utils \
+    xvfb \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+
+# Start Xvfb and the app
+CMD xvfb-run --auto-servernum --server-args="-screen 0 1280x720x24" node scraper.js
+```
+
+5. Push to the Space repository
+6. Space auto-deploys and runs on port 7860
+
+**Production URL:** `https://abhishek1996-flixnest-scraper.hf.space`
+
+---
+
+## 10. API Reference
+
+### Backend Endpoints
+
+#### `GET /api/extract`
+
+Extract M3U8 URL from video provider.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| tmdbId | string | Yes | TMDB movie/show ID |
+| type | string | Yes | `movie` or `tv` |
+| season | number | TV only | Season number |
+| episode | number | TV only | Episode number |
+
+**Example:**
+```bash
+curl "https://abhishek1996-flixnest-scraper.hf.space/api/extract?tmdbId=701387&type=movie"
+```
+
+**Response:**
+```json
+{
+    "success": true,
+    "m3u8Url": "https://tmstr4.thrumbleandjaxon.com/pl/H4sI.../master.m3u8",
+    "provider": "vidsrc-embed.ru",
+    "referer": "https://cloudnestra.com/"
+}
+```
+
+#### `GET /api/proxy/m3u8`
+
+Proxy and rewrite M3U8 playlist.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| url | string | Yes | URL-encoded M3U8 URL |
+| referer | string | No | URL-encoded referer |
+
+**Response:** Rewritten M3U8 content with proxied URLs.
+
+#### `GET /api/proxy/segment`
+
+Proxy video segment (.ts file).
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| url | string | Yes | URL-encoded segment URL |
+| referer | string | No | URL-encoded referer |
+
+**Response:** Binary video data stream.
+
+#### `GET /health`
+
+Health check endpoint.
+
+**Response:**
+```json
+{
+    "status": "ok",
+    "uptime": 3600.5
+}
+```
+
+---
+
+## 11. Failed Approaches (What NOT to Do)
+
+### ❌ Approach 1: Direct API Calls from Frontend
+
+**What we tried:** Call vidsrc.cc APIs directly from React  
+**Why it failed:** CORS policy blocks all cross-origin requests  
+**Error:** `Access-Control-Allow-Origin` header missing
+
+### ❌ Approach 2: Cloudflare Worker Proxy
+
+**What we tried:** Deploy a Cloudflare Worker as same-origin proxy  
+**Why it failed:**
+- Workers have 10ms CPU limit (can't run Puppeteer)
+- Origin validation happens at application layer
+- VRF tokens are browser-session bound
+
+### ❌ Approach 3: VRF Algorithm Reverse Engineering
+
+**What we tried:** Deobfuscate vidsrc.cc JavaScript to find VRF generation  
+**Why it failed:**
+- Algorithm is heavily obfuscated
+- Changes frequently
+- Not sustainable
+
+### ❌ Approach 4: Standard Puppeteer
+
+**What we tried:** Use standard Puppeteer package  
+**Why it failed:** Cloudflare detected it as bot, showed captcha page forever
+
+### ❌ Approach 5: Railway/Render Deployment
+
+**What we tried:** Deploy to Railway and Render  
+**Why it failed:**
+- Railway: Free tier too limited
+- Render: Cold starts killed the browser session
+
+### ✅ What Actually Worked
+
+**puppeteer-real-browser on Hugging Face Spaces** with:
+- `turnstile: true` for Cloudflare bypass
+- Xvfb for headless rendering
+- Browser session reuse
+- Full proxy chain with referer passthrough
+
+---
+
+## 12. Troubleshooting Guide
+
+### Problem: Video shows "Mixed Content" error
+
+**Cause:** Proxy returning `http://` URLs on HTTPS page  
+**Fix:** Ensure `backend/scraper.js` line 232 uses:
+```javascript
+const proxyBase = `https://${req.get('host')}`;
+```
+
+### Problem: 403 Forbidden on M3U8 or segments
+
+**Cause:** Wrong or missing referer header  
+**Fix:** 
+1. Check extraction returns `referer` field
+2. Check frontend passes `&referer=` param to proxy
+3. Check proxy uses referer in axios headers
+
+### Problem: Cloudflare "Just a moment" page forever
+
+**Cause:** Bot detection blocking Puppeteer  
+**Fix:** Use `puppeteer-real-browser` with `turnstile: true`
+
+### Problem: No M3U8 found (extraction timeout)
+
+**Cause:** Provider changed structure or is blocking  
+**Fix:**
+1. Check provider is still working manually
+2. Try switching provider order in `PROVIDERS` array
+3. Add new provider if needed
+
+### Problem: hls.js not loading video
+
+**Cause:** M3U8 content has wrong URLs  
+**Fix:** Check proxy rewrites ALL URLs (segments, keys, maps)
+
+### Problem: Quality selector shows only "Auto"
+
+**Cause:** hls.js not parsing quality levels  
+**Fix:** Check `MANIFEST_PARSED` event fires with `data.levels`
+
+---
+
+## 13. Environment Variables
+
+### Frontend (.env.local)
+
+```bash
+# TMDB API Key (required for movie/TV metadata)
+VITE_TMDB_API_KEY=your_tmdb_api_key
+
+# Backend scraper URL (optional, has default)
+VITE_SCRAPER_URL=https://abhishek1996-flixnest-scraper.hf.space/api/extract
+```
+
+### Backend (Hugging Face Spaces)
+
+No environment variables required. Port 7860 is used by default (HF Spaces standard).
+
+---
+
+## 14. Local Development
+
+### Frontend
+
+```bash
+cd FlixNest
+npm install
+npm run dev
+# Opens at http://localhost:5173
+```
+
+### Backend (requires Linux/WSL for Puppeteer)
+
+```bash
+cd FlixNest/backend
+npm install
+node scraper.js
+# Runs at http://localhost:7860
+```
+
+For local testing, update `src/services/streamExtractor.ts`:
+```typescript
+return 'http://localhost:7860/api/extract';
+```
+
+---
+
+## 15. Design System
 
 ### Color Palette
+
 | Color | Hex | Usage |
 |-------|-----|-------|
 | bg-primary | `#0A0E14` | Main background |
 | bg-secondary | `#141821` | Secondary background |
 | surface | `#1A1F2E` | Card backgrounds |
-| surface-hover | `#242938` | Hover states |
 | accent-primary | `#E50914` | Primary accent (Netflix red) |
-| accent-secondary | `#00A8E8` | Secondary accent (blue) |
 | text-primary | `#FFFFFF` | Primary text |
 | text-secondary | `#A0AEC0` | Secondary text |
-| text-muted | `#718096` | Muted text |
-| success | `#10B981` | Success states |
-| error | `#EF4444` | Error states |
-| warning | `#F59E0B` | Warning states |
 
 ### Typography
-- **Body Font**: Inter
-- **Heading Font**: Poppins
+
+- **Body Font:** Inter
+- **Heading Font:** Poppins
 
 ---
 
-## Git Commit History
+## Appendix A: Verification Commands
 
-| Commit | Date | Description |
-|--------|------|-------------|
-| `a70a835` | Oct 6, 2025 | Initial commit |
-| `bb209c8` | Oct 6, 2025 | Initialize project with Vite and dependencies |
-| `6074cb3` | Oct 6, 2025 | Refactor routing and component structure |
-| `b9f818e` | Oct 6, 2025 | Rename PlayerPage component and update routing |
-| `9b21b04` | Oct 6, 2025 | Implement home page content and styling |
-| `aa4d042` | Oct 6, 2025 | Implement dedicated movie and TV show detail pages |
-| `6e64608` | Oct 6, 2025 | Add settings page and watchlist/history clearing |
-| `d77c16a` | Oct 6, 2025 | Improve performance with lazy loading |
-| `980acf0` | Oct 6, 2025 | Fix HeroSection pagination and ErrorBoundary |
-| `7322e83` | Oct 6, 2025 | Improve carousel controls and error boundary |
-| `6e6653e` | Oct 6, 2025 | Adjust detail page layout for poster visibility |
-| `3c8e849` | Oct 6, 2025 | Fix React imports and min-height on detail pages |
-| `2e3b2dc` | Oct 6, 2025 | Adjust padding and React imports |
-| `352f965` | Oct 6, 2025 | Implement mobile responsive header |
-| `08426b3` | Oct 6, 2025 | Improve persistence and context handling |
-| `92bc5f5` | Oct 6, 2025 | Improve ErrorBoundary and useLocalStorage hook |
-| `06d8bca` | Oct 6, 2025 | Fix clearWatchlist() with proper state clearing |
-| `95f6529` | Oct 7, 2025 | Site rename to FlixNest |
-| `14bef32` | Nov 30, 2025 | Fix: Remove sandbox attribute for video playback |
-
----
-
-## Deployment Guide
-
-### Cloudflare Pages Deployment
-
-The project is deployed to **Cloudflare Pages** using the **Wrangler CLI**.
-
-#### Project Information
-- **Project Name**: `flixnest`
-- **Production Domain**: `flixnest.pages.dev`
-- **Production Branch**: `production`
-- **Preview Branch**: `main`
-
-#### Prerequisites
-1. Wrangler CLI installed (`npm install -g wrangler` or use `npx`)
-2. Authenticated with Cloudflare (`npx wrangler login`)
-
-#### Build the Project
+### Test Backend Health
 ```bash
-npm run build
+curl https://abhishek1996-flixnest-scraper.hf.space/health
 ```
 
-#### Deploy to Production
+### Test Extraction
 ```bash
-npx wrangler pages deploy dist --project-name=flixnest --branch=production
+curl "https://abhishek1996-flixnest-scraper.hf.space/api/extract?tmdbId=701387&type=movie"
 ```
 
-#### Deploy to Preview (for testing)
+### Test M3U8 Proxy (use URL from extraction response)
 ```bash
-npx wrangler pages deploy dist --project-name=flixnest --branch=main
-```
-
-#### Useful Wrangler Commands
-
-**List all projects:**
-```bash
-npx wrangler pages project list
-```
-
-**List deployments for a project:**
-```bash
-npx wrangler pages deployment list --project-name=flixnest
-```
-
-**List deployments as JSON (for scripting):**
-```bash
-npx wrangler pages deployment list --project-name=flixnest --json
-```
-
-### Important Notes
-
-1. **Branch Configuration**:
-   - `--branch=production` → Updates the main `flixnest.pages.dev` domain
-   - `--branch=main` → Updates preview URLs only (e.g., `d8e18699.flixnest.pages.dev`)
-
-2. **Always build before deploying**: The `dist` folder must contain the latest build.
-
-3. **Cache**: Cloudflare may cache old versions. Use hard refresh (Ctrl+Shift+R) or wait a few minutes after deployment.
-
----
-
-## Known Issues & Fixes
-
-### Issue: "Please Disable Sandbox" Error on Video Player
-
-**Problem**: Videos wouldn't play, showing "Oops! Please Disable Sandbox" message from vidsrc.cc.
-
-**Root Cause**: The iframe had a restrictive `sandbox` attribute that blocked vidsrc.cc functionality:
-```tsx
-sandbox="allow-same-origin allow-scripts allow-forms allow-presentation"
-```
-
-**Solution**: Removed the `sandbox` attribute from the iframe in `PlayerPage.tsx`:
-```tsx
-<iframe
-  src={streamUrl}
-  className="absolute top-0 left-0 w-full h-full"
-  title="Video Player"
-  frameBorder="0"
-  allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-  allowFullScreen
-  referrerPolicy="origin"
-/>
+curl "https://abhishek1996-flixnest-scraper.hf.space/api/proxy/m3u8?url=<encoded_m3u8_url>&referer=<encoded_referer>"
 ```
 
 ---
 
-### Issue: Popup Ads Opening New Tabs
+## Appendix B: Full Working Request Chain
 
-**Problem**: When users interact with the video player (click to play, pause, seek), popup ads would open in new browser tabs, disrupting the viewing experience.
+Here's a complete example of the request chain for playing "Bugonia" (TMDB ID: 701387):
 
-**Root Cause**: vidsrc.cc injects ad triggers on user interactions within the iframe. Since the iframe is cross-origin, we cannot directly block these triggers.
+```bash
+# Step 1: Extract M3U8 URL
+curl "https://abhishek1996-flixnest-scraper.hf.space/api/extract?tmdbId=701387&type=movie"
+# Response:
+# {
+#   "success": true,
+#   "m3u8Url": "https://tmstr4.thrumbleandjaxon.com/pl/H4sI.../master.m3u8",
+#   "provider": "vidsrc-embed.ru",
+#   "referer": "https://cloudnestra.com/"
+# }
 
-**Solution**: Implemented an **Auto-Focus Recovery System** in `PlayerPage.tsx`:
+# Step 2: Frontend constructs proxied URL (this is what hls.js loads):
+# https://abhishek1996-flixnest-scraper.hf.space/api/proxy/m3u8?url=https%3A%2F%2Ftmstr4...&referer=https%3A%2F%2Fcloudnestra.com%2F
 
-```tsx
-// Popup/Ad detection: When window loses focus (popup opened), refocus immediately
-useEffect(() => {
-  const handleBlur = () => {
-    const now = Date.now();
-    if (now - lastBlurTime.current > 500) {
-      lastBlurTime.current = now;
-      setTimeout(() => {
-        window.focus();
-        setAdsBlocked(prev => prev + 1);
-      }, 100);
-    }
-  };
+# Step 3: Proxy returns rewritten M3U8:
+# #EXTM3U
+# #EXT-X-STREAM-INF:BANDWIDTH=746951,RESOLUTION=540x360
+# https://abhishek1996-flixnest-scraper.hf.space/api/proxy/m3u8?url=...360p/index.m3u8&referer=...
+# #EXT-X-STREAM-INF:BANDWIDTH=2694514,RESOLUTION=1080x720
+# https://abhishek1996-flixnest-scraper.hf.space/api/proxy/m3u8?url=...720p/index.m3u8&referer=...
+# #EXT-X-STREAM-INF:BANDWIDTH=5251003,RESOLUTION=1620x1080
+# https://abhishek1996-flixnest-scraper.hf.space/api/proxy/m3u8?url=...1080p/index.m3u8&referer=...
 
-  const handleVisibilityChange = () => {
-    if (document.hidden) {
-      setTimeout(() => window.focus(), 100);
-    }
-  };
-
-  window.addEventListener('blur', handleBlur);
-  document.addEventListener('visibilitychange', handleVisibilityChange);
-  
-  return () => {
-    window.removeEventListener('blur', handleBlur);
-    document.removeEventListener('visibilitychange', handleVisibilityChange);
-  };
-}, []);
-```
-
-**How it works**:
-1. **No blocking overlay** - Users can interact with video controls immediately
-2. **Blur detection** - When a popup opens, our window loses focus (blur event fires)
-3. **Auto-refocus** - We immediately call `window.focus()` to bring attention back to our tab
-4. **Subtle notification** - "Ad blocked (N)" appears briefly in the corner
-5. **Full video control** - Play, pause, seek, quality, volume, fullscreen all work normally
-
-**Result**: Popup ads are effectively blocked - they may open in the background but the user stays on our tab and doesn't notice the interruption.
-
----
-
-## Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `REACT_APP_TMDB_API_KEY` | TMDB API Key | Fallback key provided |
-
-To use your own TMDB API key, create a `.env` file:
-```
-REACT_APP_TMDB_API_KEY=your_api_key_here
+# Step 4: hls.js loads quality-specific playlist, segments stream through /api/proxy/segment
+# Video plays!
 ```
 
 ---
 
-## Local Development
+## Document History
 
-### Install Dependencies
-```bash
-npm install
-```
-
-### Start Development Server
-```bash
-npm run dev
-```
-
-### Build for Production
-```bash
-npm run build
-```
-
-### Preview Production Build
-```bash
-npm run preview
-```
+| Date | Version | Changes |
+|------|---------|---------|
+| Dec 8, 2025 | 2.0 | Complete rewrite with working production solution, HTTPS fix, referer handling |
+| Dec 6, 2025 | 1.0 | Initial documentation |
 
 ---
 
-## External Services
+**End of Documentation**
 
-| Service | URL | Purpose |
-|---------|-----|---------|
-| TMDB API | `https://api.themoviedb.org/3` | Movie/TV metadata |
-| TMDB Images | `https://image.tmdb.org/t/p` | Poster and backdrop images |
-| VidSrc | `https://vidsrc.cc/v2/embed` | Video streaming |
-
----
-
-## License
-
-This project is for educational and demonstration purposes only. It is not affiliated with TMDB or any streaming providers.
+> 🎬 **For any future AI agent:** This documentation represents the WORKING state of FlixNest as of December 8, 2025. The key breakthroughs were: (1) Using `puppeteer-real-browser` instead of standard Puppeteer for Cloudflare bypass, (2) Deploying to Hugging Face Spaces which allows long-running browser processes, (3) Capturing and passing the correct `referer` header through the entire proxy chain, and (4) Forcing HTTPS in proxy URLs because HF Spaces runs behind a reverse proxy that reports `http` internally.

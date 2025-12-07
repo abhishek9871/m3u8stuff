@@ -1,3 +1,17 @@
+# Thread History - FlixNest Development
+
+> **⚠️ ARCHIVED - See DOCUMENTATION.md**
+> 
+> This file contains the raw conversation/research history from December 2025.
+> 
+> **The authoritative, up-to-date documentation is in [`DOCUMENTATION.md`](./DOCUMENTATION.md)**
+> 
+> This file is preserved for historical reference only.
+
+---
+
+# ARCHIVED CONTENT BELOW
+
 Search
 Current Workspace
 21h

@@ -358,12 +358,15 @@ export class StreamExtractor {
         url: data.m3u8Url.substring(0, 80),
         subtitles: data.subtitles?.length || 0,
         cached: data.cached,
-        extractionTime: data.extractionTime
+        extractionTime: data.extractionTime,
+        referer: data.referer
       });
 
       // Proxy the m3u8 URL through our backend to bypass CORS
+      // Include the referer that was captured during extraction for proper auth
       const scraperBaseUrl = SCRAPER_CONFIG.url.replace('/api/extract', '');
-      const proxiedM3u8Url = `${scraperBaseUrl}/api/proxy/m3u8?url=${encodeURIComponent(data.m3u8Url)}`;
+      const refererParam = data.referer ? `&referer=${encodeURIComponent(data.referer)}` : '';
+      const proxiedM3u8Url = `${scraperBaseUrl}/api/proxy/m3u8?url=${encodeURIComponent(data.m3u8Url)}${refererParam}`;
 
       this.log('Using proxied m3u8 URL:', proxiedM3u8Url.substring(0, 80));
 

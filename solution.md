@@ -1,10 +1,26 @@
 # FlixNest Stream Extraction Solution
 
+> **⚠️ DEPRECATED - See DOCUMENTATION.md**
+> 
+> This file contains outdated information from December 6, 2025.
+> 
+> **The authoritative, up-to-date documentation is in [`DOCUMENTATION.md`](./DOCUMENTATION.md)**
+> 
+> Key changes since this file was written:
+> - Provider changed from `vidsrc.cc` to `vidsrc-embed.ru`
+> - HTTPS enforcement fix applied (Mixed Content error)
+> - Referer capture and passthrough implemented
+> - Verified working in production on December 8, 2025
+
+---
+
+# ARCHIVED CONTENT BELOW (December 6, 2025)
+
 ## Complete Technical Documentation
 
 **Document Version:** 1.0  
 **Last Updated:** December 6, 2025  
-**Status:** WORKING SOLUTION IMPLEMENTED
+**Status:** ~~WORKING SOLUTION IMPLEMENTED~~ SUPERSEDED BY DOCUMENTATION.md
 
 ---
 

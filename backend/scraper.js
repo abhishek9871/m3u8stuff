@@ -78,6 +78,7 @@ app.get('/api/extract', async (req, res) => {
 
     let foundMedia = null;
     let usedProvider = null;
+    let capturedReferer = null;
 
     // Set up extraction listener for this request
     const responseHandler = (response) => {
@@ -85,6 +86,14 @@ app.get('/api/extract', async (req, res) => {
         if ((url.includes('.m3u8') || url.includes('.mp4')) && !url.includes('sk-') && !foundMedia) {
             console.log(`[Target] 🎯 Found Media: ${url}`);
             foundMedia = url;
+            // Capture the referer from the request that triggered this response
+            try {
+                const request = response.request();
+                capturedReferer = request.headers()['referer'] || page.url();
+                console.log(`[Target] 📎 Captured Referer: ${capturedReferer}`);
+            } catch (e) {
+                capturedReferer = page.url();
+            }
         }
     };
     page.on('response', responseHandler);
@@ -124,12 +133,15 @@ app.get('/api/extract', async (req, res) => {
     page.off('response', responseHandler);
 
     if (foundMedia) {
-
+        // Get the final page URL as fallback referer
+        const pageReferer = capturedReferer || page.url();
         console.log('[Extract] ✅ Success! Returning RAW URL (Frontend will proxy).');
+        console.log('[Extract] 📎 Referer for proxy:', pageReferer);
         res.json({
             success: true,
             m3u8Url: foundMedia,
-            provider: usedProvider
+            provider: usedProvider,
+            referer: pageReferer
         });
     } else {
         const title = await page.title();
@@ -178,34 +190,138 @@ async function handlePageInteraction(page, providerName) {
     } catch (e) { }
 }
 
-// 🌐 PROXY ENDPOINT
+// 🌐 PROXY ENDPOINT - Rewrites M3U8 URLs to route through proxy
 app.get('/api/proxy/m3u8', async (req, res) => {
     const { url, referer } = req.query;
     if (!url) return res.status(400).send('No URL');
 
+    const decodedUrl = decodeURIComponent(url);
+    const decodedReferer = referer ? decodeURIComponent(referer) : null;
+    console.log('[Proxy] Fetching M3U8:', decodedUrl);
+    console.log('[Proxy] Using Referer:', decodedReferer);
+
     try {
+        // Determine base URL for resolving relative paths
+        const urlObj = new URL(decodedUrl);
+        const baseUrl = decodedUrl.substring(0, decodedUrl.lastIndexOf('/') + 1);
+
+        // Use the captured referer from extraction, or fallback to embed URL
+        const effectiveReferer = decodedReferer || 'https://vidsrc-embed.ru/';
+
         const response = await axios({
             method: 'get',
-            url: decodeURIComponent(url),
-            responseType: 'stream',
+            url: decodedUrl,
+            responseType: 'text', // Get as text to rewrite URLs
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                // 'Referer': referer ? decodeURIComponent(referer) : 'https://vidsrc.xyz/'
+                'Referer': effectiveReferer,
+                'Origin': new URL(effectiveReferer).origin,
+                'Accept': '*/*',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+                'sec-ch-ua-mobile': '?0',
+                'sec-ch-ua-platform': '"Windows"',
+                'sec-fetch-dest': 'empty',
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-site': 'cross-site'
             }
         });
 
-        // Copy critical headers
+        let content = response.data;
+        // Force HTTPS - HF Spaces reverse proxy reports 'http' but frontend uses HTTPS
+        const proxyBase = `https://${req.get('host')}`;
+
+        // Rewrite URLs in M3U8 content, preserving the referer chain
+        const refererParam = effectiveReferer ? `&referer=${encodeURIComponent(effectiveReferer)}` : '';
+        const lines = content.split('\n');
+        const rewrittenLines = lines.map(line => {
+            const trimmed = line.trim();
+            
+            // Skip empty lines, comments, and tags (except URI= attributes)
+            if (!trimmed || trimmed.startsWith('#')) {
+                // Handle #EXT-X-KEY and #EXT-X-MAP with URI attributes
+                if (trimmed.includes('URI="')) {
+                    return trimmed.replace(/URI="([^"]+)"/g, (match, uri) => {
+                        const absoluteUri = uri.startsWith('http') ? uri : new URL(uri, baseUrl).href;
+                        return `URI="${proxyBase}/api/proxy/segment?url=${encodeURIComponent(absoluteUri)}${refererParam}"`;
+                    });
+                }
+                return line;
+            }
+
+            // This is a URL line (segment or playlist)
+            let absoluteUrl;
+            if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+                absoluteUrl = trimmed;
+            } else {
+                // Resolve relative URL against base
+                absoluteUrl = new URL(trimmed, baseUrl).href;
+            }
+
+            // Determine if it's a segment (.ts, .m4s) or another playlist (.m3u8)
+            if (absoluteUrl.includes('.m3u8') || absoluteUrl.includes('.M3U8')) {
+                return `${proxyBase}/api/proxy/m3u8?url=${encodeURIComponent(absoluteUrl)}${refererParam}`;
+            } else {
+                return `${proxyBase}/api/proxy/segment?url=${encodeURIComponent(absoluteUrl)}${refererParam}`;
+            }
+        });
+
+        const rewrittenContent = rewrittenLines.join('\n');
+        console.log('[Proxy] M3U8 rewritten, lines:', rewrittenLines.length);
+
+        // CORS headers
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
+        res.send(rewrittenContent);
+
+    } catch (e) {
+        console.error('[Proxy] M3U8 Error:', e.message);
+        res.status(500).send('Proxy Error: ' + e.message);
+    }
+});
+
+// 🎬 SEGMENT PROXY - For .ts video segments
+app.get('/api/proxy/segment', async (req, res) => {
+    const { url, referer } = req.query;
+    if (!url) return res.status(400).send('No URL');
+
+    const decodedUrl = decodeURIComponent(url);
+    const decodedReferer = referer ? decodeURIComponent(referer) : 'https://vidsrc-embed.ru/';
+
+    try {
+        const response = await axios({
+            method: 'get',
+            url: decodedUrl,
+            responseType: 'stream',
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Referer': decodedReferer,
+                'Origin': new URL(decodedReferer).origin,
+                'Accept': '*/*',
+                'Accept-Language': 'en-US,en;q=0.9'
+            },
+            timeout: 30000
+        });
+
+        // Copy headers
         if (response.headers['content-type']) res.setHeader('Content-Type', response.headers['content-type']);
         if (response.headers['content-length']) res.setHeader('Content-Length', response.headers['content-length']);
 
         // CORS
         res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
 
         response.data.pipe(res);
     } catch (e) {
-        console.error('[Proxy] Error:', e.message);
-        res.status(500).send('Proxy Error');
+        console.error('[Segment] Error:', e.message);
+        res.status(500).send('Segment Proxy Error');
     }
+});
+
+// Health check
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', uptime: process.uptime() });
 });
 
 app.listen(PORT, '0.0.0.0', () => console.log(`🎬 Multi-Source Scraper on ${PORT}`));
