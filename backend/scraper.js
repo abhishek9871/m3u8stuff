@@ -12,10 +12,10 @@ app.use(express.json());
 // Providers List - Priority Order
 const PROVIDERS = [
     {
-        name: 'vidsrc.xyz',
+        name: 'vidsrc-embed.ru',
         getUrl: (id, type, s, e) => type === 'movie'
-            ? `https://vidsrc.xyz/embed/movie/${id}`
-            : `https://vidsrc.xyz/embed/tv/${id}/${s}/${e}`
+            ? `https://vidsrc-embed.ru/embed/movie/${id}`
+            : `https://vidsrc-embed.ru/embed/tv/${id}/${s}/${e}`
     },
     {
         name: 'vidsrc.cc',
