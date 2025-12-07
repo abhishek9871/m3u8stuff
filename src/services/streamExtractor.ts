@@ -183,7 +183,7 @@ export class StreamExtractor {
    */
   private buildEmbedUrl(request: StreamExtractionRequest): string {
     const { type, tmdbId, season, episode } = request;
-    let url = `https://vidsrc.cc/v2/embed/${type}/${tmdbId}`;
+    let url = `https://vidsrc.xyz/embed/${type}/${tmdbId}`;
 
     if (type === 'tv' && season !== undefined && episode !== undefined) {
       url += `/${season}/${episode}`;

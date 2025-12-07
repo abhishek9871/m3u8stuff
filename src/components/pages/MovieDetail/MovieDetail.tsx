@@ -68,7 +68,7 @@ const MovieDetail: React.FC = () => {
   const inWatchlist = isInWatchlist(movie.id);
   const year = movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A';
   const runtime = movie.runtime ? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m` : 'N/A';
-  const streamUrl = `https://vidsrc.cc/v2/embed/movie/${movie.id}?autoplay=1&autonext=1`;
+  const streamUrl = `https://vidsrc.xyz/embed/movie/${movie.id}`;
 
   const handleWatchlistToggle = () => {
     if (inWatchlist) {
@@ -130,7 +130,7 @@ const MovieDetail: React.FC = () => {
     <div className="min-h-screen bg-bg-primary">
       {/* Netflix-style Hero Section */}
       <div className="relative w-full" style={{ height: isPlaying ? '56.25vw' : '70vh', maxHeight: isPlaying ? '80vh' : '70vh' }}>
-        
+
         {/* Backdrop Image or Video Player */}
         {isPlaying ? (
           <>
@@ -168,7 +168,7 @@ const MovieDetail: React.FC = () => {
                 referrerPolicy="origin"
               />
             )}
-            
+
             {/* Close button overlay */}
             <button
               onClick={handleClosePlayer}
@@ -188,11 +188,11 @@ const MovieDetail: React.FC = () => {
                 loading="eager"
               />
             )}
-            
+
             {/* Gradient Overlays */}
             <div className="absolute inset-0 bg-gradient-to-r from-bg-primary via-bg-primary/60 to-transparent" />
             <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-transparent to-bg-primary/30" />
-            
+
             {/* Content Overlay */}
             <div className="absolute inset-0 flex items-center">
               <div className="container mx-auto px-4 md:px-8 lg:px-16">
@@ -201,7 +201,7 @@ const MovieDetail: React.FC = () => {
                   <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold font-heading text-white drop-shadow-lg">
                     {movie.title}
                   </h1>
-                  
+
                   {/* Metadata Row */}
                   <div className="flex items-center gap-3 text-sm md:text-base text-white/90">
                     <span className="flex items-center gap-1 text-green-400 font-semibold">
@@ -213,7 +213,7 @@ const MovieDetail: React.FC = () => {
                     <span>{runtime}</span>
                     <span className="px-2 py-0.5 border border-white/40 rounded text-xs">HD</span>
                   </div>
-                  
+
                   {/* Genres */}
                   <div className="flex flex-wrap gap-2">
                     {movie.genres.slice(0, 4).map(genre => (
@@ -223,12 +223,12 @@ const MovieDetail: React.FC = () => {
                       </span>
                     ))}
                   </div>
-                  
+
                   {/* Overview */}
                   <p className="text-white/80 text-sm md:text-base line-clamp-3 max-w-xl">
                     {movie.overview}
                   </p>
-                  
+
                   {/* Action Buttons */}
                   <div className="flex items-center gap-3 pt-4">
                     <button
