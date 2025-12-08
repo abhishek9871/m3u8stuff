@@ -99,11 +99,17 @@ export const NativePlayer: React.FC<NativePlayerProps> = ({
     }
 
     if (subtitleFile) {
-      // Find and enable the selected track
-      const trackIndex = extracted.subtitles?.findIndex(s => s.file === subtitleFile);
-      if (trackIndex !== undefined && trackIndex >= 0 && video.textTracks[trackIndex]) {
-        video.textTracks[trackIndex].mode = 'showing';
-        console.log('[NativePlayer] Enabled subtitle:', extracted.subtitles?.[trackIndex]?.label);
+      // Find the matching subtitle from our list
+      const targetSub = extracted.subtitles?.find(s => s.file === subtitleFile);
+      if (targetSub) {
+        // Match track by label (more reliable than index)
+        for (let i = 0; i < video.textTracks.length; i++) {
+          if (video.textTracks[i].label === targetSub.label) {
+            video.textTracks[i].mode = 'showing';
+            console.log('[NativePlayer] Enabled subtitle by label:', targetSub.label);
+            break;
+          }
+        }
       }
     }
 

@@ -1,111 +1,85 @@
 import { connect } from 'puppeteer-real-browser';
 import fs from 'fs';
-import axios from 'axios';
 
 async function run() {
-    console.log('[Investigate] Launching browser...');
+    console.log('[Investigate] Launching Smart Hunter...');
     const { browser, page } = await connect({
         headless: false,
         turnstile: true,
         fingerprint: true,
-        args: ['--no-sandbox', '--window-size=1280,720']
-    });
-
-    // 🛡️ POPUP KILLER
-    browser.on('targetcreated', async (target) => {
-        if (target.type() === 'page') {
-            try {
-                const newPage = await target.page();
-                if (newPage && newPage !== page) {
-                    console.log('[Popup] 🚨 Detected new tab/popup. Closing it...');
-                    await newPage.close();
-                    console.log('[Popup] ⚔️ Popup eliminated. Refocusing main page.');
-                    await page.bringToFront();
-                }
-            } catch (e) { }
-        }
+        args: ['--no-sandbox']
     });
 
     try {
-        // Shared M3U8 Listener
-        let m3u8Found = null;
-        page.on('response', async resp => {
-            const url = resp.url();
-            if ((url.includes('.m3u8') || url.includes('.mp4')) && !url.includes('sk-')) {
-                console.log(`[Network] 🎯 Found Media: ${url}`);
-                if (url.includes('master') || url.includes('playlist')) {
-                    m3u8Found = url;
-                } else if (!m3u8Found) {
-                    m3u8Found = url;
-                }
+        // 🛡️ POPUP KILLER
+        browser.on('targetcreated', async (target) => {
+            if (target.type() === 'page') {
+                try {
+                    const newPage = await target.page();
+                    if (newPage && newPage !== page) {
+                        await newPage.close();
+                        await page.bringToFront();
+                    }
+                } catch (e) { }
             }
         });
 
-        // ==========================================
-        // TEST 1: KANTARA (Verify Playback Logic)
-        // ==========================================
-        console.log('\n[Investigate] 🕵️ Starting Test 1: Kantara (1083637)...');
-        m3u8Found = null;
-        await page.goto('https://vidsrc-embed.ru/embed/movie?tmdb=1083637', { waitUntil: 'domcontentloaded' });
-        await new Promise(r => setTimeout(r, 5000));
-
-        // Click Logic with Retry for Popups
-        console.log('[Investigate] 🖱️ Attempting Clicks...');
-        for (let i = 1; i <= 3; i++) {
-            if (m3u8Found) break;
-            console.log(`[Investigate] Click Attempt #${i} (Center)...`);
-            try {
-                await page.mouse.click(640, 360);
-            } catch (e) { }
-
-            // Wait to see if popup spawns or media loads
-            await new Promise(r => setTimeout(r, 3000));
-        }
-
-        if (m3u8Found) {
-            console.log('[Result] ✅ Kantara M3U8 Found:', m3u8Found);
-        } else {
-            console.log('[Result] ❌ Kantara M3U8 NOT Found.');
-            await page.screenshot({ path: 'kantara_failed.png' });
-        }
-
-        // ==========================================
-        // TEST 2: TRON (Verify Quality)
-        // ==========================================
-        console.log('\n[Investigate] 🕵️ Starting Test 2: Tron (533533)...');
-        m3u8Found = null;
+        console.log('[Investigate] Navigating to Tron...');
         await page.goto('https://vidsrc-embed.ru/embed/movie?tmdb=533533', { waitUntil: 'domcontentloaded' });
-        await new Promise(r => setTimeout(r, 5000));
+        await new Promise(r => setTimeout(r, 6000));
 
-        console.log('[Investigate] 🖱️ Attempting Clicks for Tron...');
-        for (let i = 1; i <= 3; i++) {
-            if (m3u8Found && m3u8Found.includes('master')) break;
-
-            // Try specific play button if visible
-            const playBtn = await page.$('.play-btn, #play-button, .jw-display-icon-container');
-            if (playBtn) {
-                console.log(`[Investigate] Click Attempt #${i} (Specific Button)...`);
-                await playBtn.click().catch(() => { });
-            } else {
-                console.log(`[Investigate] Click Attempt #${i} (Center)...`);
-                await page.mouse.click(640, 360);
+        // 1. Find Cloudnestra Frame
+        let cloudFrame = null;
+        for (const frame of page.frames()) {
+            if (frame.url().includes('cloudnestra')) {
+                cloudFrame = frame;
+                break;
             }
-            await new Promise(r => setTimeout(r, 3000));
         }
 
-        if (m3u8Found) {
-            console.log('[Result] ✅ Tron M3U8 Found:', m3u8Found);
-            console.log('[Investigate] Downloading Playlist Content...');
+        if (cloudFrame) {
+            console.log('[Investigate] Found Cloudnestra frame. Clicking play button...');
             try {
-                const response = await axios.get(m3u8Found);
-                console.log('\n----- M3U8 CONTENT -----');
-                console.log(response.data);
-                console.log('------------------------\n');
+                // Try multiple selectors for the play button
+                const btn = await cloudFrame.waitForSelector('#pl_but, .fa-play', { timeout: 5000 });
+                if (btn) await btn.click();
             } catch (e) {
-                console.log('Failed to download M3U8:', e.message);
+                console.log('[Investigate] Play button error: ' + e.message);
+                // Backup clean click
+                await page.mouse.click(640, 360);
             }
         } else {
-            console.log('[Result] ❌ Tron M3U8 NOT Found.');
+            console.log('[Investigate] Cloudnestra frame NOT found!');
+        }
+
+        console.log('[Investigate] Waiting for Prorcp frame...');
+        await new Promise(r => setTimeout(r, 10000));
+
+        // 2. Find Prorcp Frame
+        let prorcpFrame = null;
+        for (const frame of page.frames()) {
+            if (frame.url().includes('prorcp') || frame.url().includes('hash=')) {
+                prorcpFrame = frame;
+                break;
+            }
+        }
+
+        if (prorcpFrame) {
+            console.log(`[Investigate] 🎯 Found Prorcp Frame: ${prorcpFrame.url()}`);
+            const html = await prorcpFrame.content();
+            fs.writeFileSync('prorcp_dump.html', html);
+            console.log('[Investigate] Saved prorcp_dump.html');
+
+            // Log globals in this frame
+            const globals = await prorcpFrame.evaluate(() => {
+                return Object.keys(window).filter(k => k.match(/player|jw|clappr|videojs/i));
+            });
+            console.log('[Investigate] Prorcp Globals:', globals);
+
+        } else {
+            console.log('[Investigate] ❌ Prorcp frame still missing.');
+            // Dump all frame URLs
+            page.frames().forEach(f => console.log(' - ' + f.url()));
         }
 
     } catch (e) {

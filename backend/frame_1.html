@@ -1,0 +1,145 @@
+<!DOCTYPE html><html><head>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.0-2/css/all.min.css" integrity="" crossorigin="anonymous">
+<link rel="stylesheet" href="/style_rcp-e600e6.css?t=1744906951">
+
+<style>
+    body {
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    }
+    .hidden {
+        display:none;
+    }
+    
+    #asdf {
+        width: 0px;
+        height: 0px;
+    }
+    
+    #iframe_title {
+        position: absolute;
+        top: calc(50% + 45px);
+        font-size: 1.1em;
+        text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+        width: calc(100% - 30px);
+        text-align: center;
+        padding: 0px 15px;
+    }
+</style>
+</head>
+<body data-i="6604188">
+    
+    
+        <!--<div id="pop_asdf" style="position:absolute; width:100%; height:100%; z-index:2147483650; pointer-events: none;"></div>-->
+        
+    <!--<div id="loading_overlay"></div>-->
+    <div id="the_frame" style="background-image: none;">
+                <div id="pl_but_background" style="background-image: url('//image.tmdb.org/t/p/w780/g3lCbTn3HYHTiFrfusxKGXMdyUW.jpg');">
+            <div id="iframe_title">
+                TRON: Ares (2025)            </div>
+            <i id="pl_but" class="fas fa-play"></i>
+        </div>
+            </div>
+    
+    <div id="hidden" style="display:hidden;"></div>
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js" integrity="sha256-1A78rJEdiWTzco6qdn3igTBv9VupN3Q1ozZNTR4WE/Y=" crossorigin="anonymous"></script>
+    <script src="/base64.js?t="></script>
+    
+    <script src="/sbx.js?t=1751380596"></script>
+
+    
+    <script>
+    
+    /*
+    $(document).ready(function(){
+        
+        
+        if($.cookie('pop_asdf')){
+            $("#pop_asdf").addClass("hidden");
+        }
+        
+        $("#pop_asdf").click(function(){
+            if(!$.cookie('pop_asdf')){
+                if($.cookie('pop_asdf_tmp') >= 3){
+                    var date = new Date();
+                    date.setTime(date.getTime() + (10800 * 1000));
+                    $.cookie('pop_asdf', 1, { expires: date });
+                    $("#pop_asdf").addClass("hidden");
+                }else{
+                    var cookie_value = 1;
+                    if($.cookie('pop_asdf_tmp'))
+                        cookie_value = $.cookie('pop_asdf_tmp');
+                        
+                    cookie_value++;
+                    
+                    $.cookie('pop_asdf_tmp', cookie_value);
+                    $(this).addClass("hidden");
+                    setTimeout(function(){
+                        $("#pop_asdf").removeClass("hidden");
+                    }, 59000);
+                }
+            }
+        });
+    });
+    */
+    
+        
+    $("#pl_but_background , #pl_but").click(function(){
+        loadIframe();
+    });
+    
+        
+    function loadIframe(data = 1){
+        if(data == 1){
+            $("#the_frame").removeAttr("style");
+            $("#the_frame").html("");
+            $('<iframe>', {
+               id: 'player_iframe',
+               src: '/prorcp/MjE4MDU5YjBlM2RjNjA0ZTdiMzcyNTkyZjMwYTBlYzU6WVZZek1tbHROMVpKYVhGWVNFRXdOa28xYkdGMk1WbExZbkoyVm1wYWR6a3dWaTlPZGs5dWVVeDFLemd2Y1ZGSlZpOVlUMWhtYUZrNGNHUjJNMFVyZHk5d1VreG1XRXR0UzFveUszcGtVbU5MVjJaa01VVkVOV1pEZUhSUFEwbzFhSFkyUzBKVlVVaG1iRlZ1YUcxdU56SnFkMVF2WnpVNVFVczBVM0JZYVZWd1UyOVJUMlZUVm0xS1pXRklNWEYzTVZOTlZtb3dUVkZGUjNGdE5VWkdlV2xpVlVaVlFYSTJXR05FV0ZwNU5GbFdiMHMzTVRablNDdEVWRWw2T1dsQ1YwOW9WVmh1VGpBNE5rdGpTRzFUYW5WRWRFRlROakpDVTFKVUwzZHNiR1JaYkZWeFkwVnRRek0wT0VGcVZVZEViUzh5WVZwcE0xRXZjQzl0ZFdONGNVbFlkVWhyU2tRNVprdFRlbUZ6TVhJeU1YaGpkMDFsUkhWNmVtdGpTRXM1ZDJoSU9VNUJjbVJQYlcxWFkzRkpVbE52VVRoVFNqWlNkRkpOYkM5cFNHZHNPV0ZLVEdaNlkzUkZkMkpsVUVnd09HUTRjSGxYUjNOV09DOVFZakkzTnpNeE9VRnVXalppYld0NVZYSlBZMmhVTmsxTE0wcFlOV3BZVkVrM05EZFhRbEJsU214UFpqVm1WM0UwWjI5T1pXUk5XSEp0VkhGTmFXczNhMWROUzFKblEwaHdWRWR0UlhOV1QxRjVTakJZVWt3NGVUYzVhMlF5YVN0QlExRmpPVko2VmtWU1JucFJNakpNYzBWeFowUnFaMk5GZWxsQlRYZHJSV3RtTmtFek5tWXhUbGhMYTFaeVNtSm1abVJFVEZjMFpXSkVabHBhYjJ3MWNWRlNNSGhoWVhCbWEyWlVSMHBuV1ZGaGVXRkpOMU5PZFZwNlNEZGtlR2g2YUhscE0zRlplbnBPTDFkblluaGhNRmRxVG1ObVp6RTFTVGRXY2pnME0wNHpUMkUwVWtWeGQxZFhZUzh5V1U1UWN6bGxaek5zYlZsVWVYcGxRbUYwWlRsSWEzaGtTRFJ3YVhWd1JqaHJRMnhGTDNCaWNYVm9PWEJTVUVGTFZsbEpVVU01VTFodkswOWFORTl3UjI5cFpsUnFiMGwwU1ROeVQwZEpjMVZRWkVSTWNIWXJibWhKVDI4NVZHZFdNemhZVW5OcFIwdElVVlF2VkdwbFptRnBPR2x0TlRkblR6aFRVemx1UlZObE1XVjFRWGcyZGxVclMzUkhTa295UjBweFlraHBVWHBSYWpOV2RVRnRlR3RZUzFSaGFXRTJiMlE1VkN0S1NXeG9kRVV4T0V4Q2FqQlZkMngyYzFSREszQnVaRTF6TUUxbVJrSXZka2RFTVRKNGJEZFpSemhyYTJNM1N5OVphSFJWYkZaYVFVeFdiVmxITjJzM0wyMVZjRFZzYXprNVdqTkRjM2hQTWxCTFFWWlZUR3cxUlZKcWVFMVhWU3RxU0dFMlduZEZZV1VyWVRNMVNHbEJjVVExZG1OdU9YUTVhVkEwV1dGWWNFbHZTSGxtVUVwRFp6UlZTbkJuT0RKbFNEUkZUVmhrVEN0UlNHUnNUVlpoZFRGSU4zSndNMGh1Ulc1WUwxcG9lRkpKUVZWMVEyTXhaMVp1U3pSWFFYWndVRTlUU0VoMVNTdHpVbmhMYURCWVlXZElUMFZ5WkRBdmIxbDJjRGhVUzNGU05uaE5hMUZYWlhwRU5XZE5SeTlIVTBGSFluTnhibGxwUnpSMk5uSkJNbmg2Y1c1MFNUQkNVbTg1Y2xwT2JFeGFXVTV2YzNsaVIybFFlREJtTXpCQ05teGFSbWQzWkZWclJVTkNZVlJQWmpKQ1lWVnlRVEZ2VDFCTE4xUkRjVGg2T1dGalNXTlRiamhUTjBZMVNHbFNNREpPVDNacldteHBkbGhvUm1wV1NWUjVNbGgwZDFNcmFYbENWVTlETkdKUFZGbFRPVEp2YjNoQ1ptSlhOMUZtU21NdlIwdHhhV2xLYlhGeGJ5OVhZVFZFVTI5blNsUTJTek42YTB0VGMyWkpjbXRwVGxvclZIVjJkVkJOUkVKVlIwZEpZUzloVXpaWU9UZHdVVTFFZWxoRlNrUlNkR2xwTVhwSk1taHBVazgyV1RkSU5WTmhkbUpFV0ZOTWJURkdSMWxDTUZrd05HRlhhRGR2U0dsUWVIaHJXVms5',
+               frameborder: 0,
+               scrolling: 'no',
+               allowfullscreen: 'yes',
+               allow: "autoplay",
+               style: 'height: 100%; width: 100%;'
+            }).appendTo('#the_frame');
+            $("#player_iframe").on("load", function () {
+                $("#the_frame").attr("style","background-image: none;");
+            });
+        }
+    }
+    
+    // pm redirector
+    window.addEventListener('message', message => {
+        if (message.source == window) {
+            return; // Skip message in this event listener
+        }
+        
+        var the_iframe = document.getElementById('player_iframe');
+        
+        if(message.source == window.parent){
+            the_iframe.contentWindow.postMessage(message.data,'*');
+        }else{
+            window.parent.postMessage(message.data , '*');
+        }
+        
+        
+        
+    });
+        
+        
+        
+    </script>
+    
+    
+    
+    
+    
+    
+   
+<script defer="" src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;164a84f147c94870b0901f3bf4bd8a15&quot;,&quot;r&quot;:1,&quot;server_timing&quot;:{&quot;name&quot;:{&quot;cfCacheStatus&quot;:true,&quot;cfEdge&quot;:true,&quot;cfExtPri&quot;:true,&quot;cfL4&quot;:true,&quot;cfOrigin&quot;:true,&quot;cfSpeedBrain&quot;:true},&quot;location_startswith&quot;:null}}" crossorigin="anonymous"></script>
+
+
+</body></html>
