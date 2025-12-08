@@ -142,9 +142,9 @@ app.get('/api/extract', async (req, res) => {
             // Interaction: Check/solve Cloudflare or Click Play
             await handlePageInteraction(page, provider.name);
 
-            // Wait up to 30 seconds for M3U8 (Increased from 15s)
+            // Wait up to 60 seconds for M3U8 (Increased to handle cold starts/Cloudflare)
             let attempts = 0;
-            const MAX_ATTEMPTS = 30;
+            const MAX_ATTEMPTS = 60;
 
             // Smart Selection: Wait loop
             while (attempts < MAX_ATTEMPTS) {
