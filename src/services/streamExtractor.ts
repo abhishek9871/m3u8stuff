@@ -327,7 +327,7 @@ export class StreamExtractor {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: response.statusText }));
-        this.log('Scraper returned error:', response.status, errorData);
+        this.log('Scraper returned error:', { status: response.status, data: errorData });
         return {
           success: false,
           streams: [],

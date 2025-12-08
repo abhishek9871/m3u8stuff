@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Stylish TV Show Player Component</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings:
+                'FILL' 0,
+                'wght' 400,
+                'GRAD' 0,
+                'opsz' 24;
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#3713ec",
+              "background-light": "#f6f6f8",
+              "background-dark": "#131022",
+            },
+            fontFamily: {
+              "display": ["Space Grotesk", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-white">
+<div class="relative flex h-screen min-h-[720px] w-full flex-col overflow-hidden">
+<div class="flex h-full grow">
+<!-- Main Content: Video Player -->
+<main class="flex-1 flex flex-col bg-black">
+<!-- Breadcrumbs -->
+<div class="px-6 py-4 bg-black/30 absolute top-0 left-0 w-full z-10">
+<div class="flex flex-wrap items-center gap-2">
+<a class="text-[#a19db9] hover:text-white text-sm font-medium leading-normal" href="#">Home</a>
+<span class="text-[#a19db9] text-sm font-medium leading-normal">/</span>
+<a class="text-[#a19db9] hover:text-white text-sm font-medium leading-normal" href="#">Cosmic Wanderers</a>
+<span class="text-[#a19db9] text-sm font-medium leading-normal">/</span>
+<span class="text-white text-sm font-medium leading-normal">S02:E05 - The Crimson Nebula</span>
+</div>
+</div>
+<!-- Media Player -->
+<div class="relative flex flex-1 items-center justify-center bg-black group">
+<div class="relative flex w-full h-full items-center justify-center bg-cover bg-center" data-alt="A nebula with vibrant red and purple clouds against a backdrop of distant stars." style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuA0iNZmvYmQpBam21JLjHyvuNcemWxj97kTu30ED5oaYOz1zXBroxBHmblFdwv6ZbYU7W_X40eyxv6ZU7LQFe5TIj3eI_8sf-NEcxs78C2jGPFZXSuP647ob-VznSq4cm0liqIPs_SUNlLvGG7Fl3FHXXshvaglYF1k9OFHmy47GgI5MZCBsh_JNTbWrK-y71EnMIJ2Rd1YYJDt3I6_AQqu1dqhyNEHMcwo-zfdMH1lb6S2x9VfB6l4DVNpa5bjaFYezDDv5T-aQeQ");'>
+<!-- Autoplay Countdown Overlay (Example state) -->
+<div class="absolute inset-0 bg-black/70 flex flex-col items-center justify-center z-20">
+<div class="flex flex-col items-center gap-4 text-center">
+<h1 class="text-white tracking-light text-3xl font-bold leading-tight px-4">Next Episode: S02:E06 - Echoes of the Past</h1>
+<div class="flex items-center gap-4">
+<span class="text-6xl font-bold text-white">10</span>
+<button class="flex items-center justify-center overflow-hidden rounded-lg h-12 bg-primary text-white gap-2 text-base font-bold leading-normal tracking-wide min-w-0 px-6 hover:bg-primary/90 transition-colors">
+<span class="material-symbols-outlined text-2xl">play_arrow</span>
+<span>Play Now</span>
+</button>
+<button class="flex items-center justify-center rounded-lg h-12 text-white/80 gap-2 text-base font-bold leading-normal tracking-wide min-w-0 px-6 hover:text-white transition-colors">
+<span>Cancel</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Player Controls (Visible on hover of parent) -->
+<div class="absolute inset-0 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<!-- Play button (centered) -->
+<div class="flex-1 flex items-center justify-center">
+<button class="flex shrink-0 items-center justify-center rounded-full size-20 bg-black/50 text-white hover:bg-black/70 transition-colors">
+<span class="material-symbols-outlined text-5xl">play_arrow</span>
+</button>
+</div>
+<!-- Timeline -->
+<div class="px-6 py-3">
+<div class="flex h-4 items-center justify-center group/timeline">
+<div class="h-1 flex-1 rounded-full bg-white/60">
+<div class="h-full rounded-full bg-primary" style="width: 25%;"></div>
+</div>
+<div class="relative hidden group-hover/timeline:block">
+<div class="absolute -left-2 -top-2 size-4 rounded-full bg-white cursor-pointer"></div>
+</div>
+<div class="h-1 flex-1 rounded-full bg-white/30"></div>
+</div>
+<div class="flex items-center justify-between mt-1">
+<p class="text-white text-xs font-medium leading-normal">10:37</p>
+<p class="text-white text-xs font-medium leading-normal">42:23</p>
+</div>
+</div>
+<!-- Toolbar -->
+<div class="flex justify-between items-center gap-2 px-6 pb-4 pt-2 bg-gradient-to-t from-black/70 to-transparent">
+<div class="flex items-center gap-2">
+<button class="p-2 text-white/80 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-2xl">pause</span>
+</button>
+<button class="p-2 text-white/80 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-2xl">volume_up</span>
+</button>
+<button class="p-2 text-white/80 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-2xl">settings</span>
+</button>
+<button class="p-2 text-white/80 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-2xl">closed_caption</span>
+</button>
+</div>
+<div class="flex items-center gap-2">
+<button class="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-primary text-white gap-2 text-sm font-bold leading-normal min-w-0 px-4 hover:bg-primary/90 transition-colors">
+<span class="material-symbols-outlined text-xl">skip_next</span>
+<span class="truncate hidden md:block">Next Episode</span>
+</button>
+<button class="p-2 text-white/80 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-2xl">fullscreen</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Sidebar: Episode List -->
+<aside class="w-[360px] flex-shrink-0 bg-background-dark/80 backdrop-blur-sm border-l border-white/10 flex flex-col">
+<div class="flex h-full flex-col justify-between p-4">
+<div class="flex flex-col gap-4 overflow-y-auto">
+<div class="flex gap-3 items-center px-2">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-lg size-16" data-alt="Futuristic spaceship flying through a colorful galaxy." style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCeNgRkWuYiTrFqfaoCHz_GHC7WSzM-q7dSrJQ-TcQNrdXUwi2LYRCfG2Em7UxGKP7Z3nuF35_PIL4nfQ2Js_52JaXb30lvV-3JLunD53vsDxDKiQmkKGFndaiizaFhGTuUhqNcEA9KcxvF42Z68TkO_zloC03CStJKVOo1voWzl_Tf0Kpq9C2ZIKCkk_ix_7gni-CcGpXOIHQgybWuDpEIBUb5_wgSLXTnPObwtDTSMTiA_0v-G8ewQXrdRLKGIcjPCXQvHxD9BRY");'></div>
+<div class="flex flex-col">
+<h1 class="text-white text-lg font-bold leading-normal">Cosmic Wanderers</h1>
+<p class="text-[#a19db9] text-sm font-normal leading-normal">Season 2</p>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<a class="flex items-center gap-3 p-2 rounded-lg hover:bg-white/10 transition-colors" href="#">
+<div class="w-24 h-14 rounded bg-center bg-cover flex-shrink-0" data-alt="Abstract image of light trails." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA9i39BCw9ORjHfn6qCzMYLjmkKQqZwT_gT1ZALVPlC_f4BQ9dhVs_LQGcwg4IKhbVLjPpCtkuitE5vgeiIlksOw6n3F1U4L7ZcF2PaKnjqSKurUHlaO-85DaKoZJ8rcOScTV5bTqY4Iqsdysfb6d3R9s1ZwXM9xmzm4FXxPxm0elqSKevLWlKuxjiEZkdL-D-tqHb70dcP7eKL7pbH6S4ThO4GrbVTDnucWp-iJ6k7OBDlOPOERHj6KEDns6JOPmSG0hmfh6LQVOU')"></div>
+<p class="text-white/80 text-sm font-medium leading-normal">E01: The Awakening</p>
+</a>
+<a class="flex items-center gap-3 p-2 rounded-lg hover:bg-white/10 transition-colors" href="#">
+<div class="w-24 h-14 rounded bg-center bg-cover flex-shrink-0" data-alt="Planet with rings seen from space." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAaK1NU1Lkk1-tdMkQR0tAGmSC2D1unbERLn2eXZ9KC6dYex8s04ZIUWyPy9aKX1kpKgrnJt1mLmM8mfyFPeuJ0TE3TPrP4tpIIwaAXtGTtSHLrH9OGE-bWZIvGr7E2Zo45Im0X_f-rL771sWqdZCD-c2BKkQ5OIL8Aec2p2IthyhpbHn3Nu5NZz0PPfgKdXnM5QK1Q2Kx30c28GSFmks5cgJeFZzIwkcfHy3EQRmtKOtDxn2IurZNZHlT70fxVd2g0F_nGmaGiFNc')"></div>
+<p class="text-white/80 text-sm font-medium leading-normal">E02: First Contact</p>
+</a>
+<a class="flex items-center gap-3 p-2 rounded-lg hover:bg-white/10 transition-colors" href="#">
+<div class="w-24 h-14 rounded bg-center bg-cover flex-shrink-0" data-alt="Astronaut floating in space near a space station." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB89wRB9sw9lSGlC9KUwfhg3k1haDiPdGh3db6yEW_WROOYtNGJqSGeG6xmGYpN4xFtu96lDPTbSH-OcHBZXKxqbTXT-5QMy8UMQziWca-CxqU51b8Ev-6G-BwNBrynCihdrFh2BxKmp8PC_Xi-0NBtIv-K3vyCwUsHJMCtOB9s0jAHnfD2HfDjnY7sVqMUqQAxLYHghshMtRxBfcOhIAfEyxK6N79WXzVkbd4QrZrCvtQx13d9ooRfKtwg5HAPReeJGLvLEcMS5Qo')"></div>
+<p class="text-white/80 text-sm font-medium leading-normal">E03: A New Alliance</p>
+</a>
+<a class="flex items-center gap-3 p-2 rounded-lg hover:bg-white/10 transition-colors" href="#">
+<div class="w-24 h-14 rounded bg-center bg-cover flex-shrink-0" data-alt="Colorful abstract space background." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDkGhdWbNSEuAkmbbXepTEtQkV-7l40yCHCP-VNBTPADqHW50E0GLqF1ZcCx5_GqFvzSHl0jfoj8SjjHIT86ZesCg_zB7Ak7BQdvohMAslQAIyCOQY_gSj2iSS25zA5QyvOFx2B8aySo9AonEfSYmk9ug49QH7beatzzBW0P-mRVsk5g-v3sN2uI2VnmDuZc9GLq_OutWxQu8FBe7liX76HKftGWz2AQcenrN-eVHsZ0rMvCO-s9tnTWswN0Yeaq28aHRVEwvXP6mk')"></div>
+<p class="text-white/80 text-sm font-medium leading-normal">E04: Distant Signals</p>
+</a>
+<a class="flex items-center gap-3 p-2 rounded-lg bg-primary/30 ring-2 ring-primary transition-colors" href="#">
+<div class="w-24 h-14 rounded bg-center bg-cover flex-shrink-0 relative" data-alt="A nebula with vibrant red and purple clouds." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBAwrSQJj_L5sbBmcHN-uWCDPjoTN0Q8tJq0s-8e1lM2rsRw4Dk1Z4G4SZ_1n-057f0lo2OmOGtfHSvBM8rRgZVPSc98uVrBd7G7Tu1hDsdfkUCJw-ksSh8hbVVY9K5ViAW47DsQi3LYBUkR02GLnWSBX9fNWAOTY4A5lW7wErF0xTOnlDA3nDuTOU0o-MPgUXlbyFp0R9kNO04qFY5cfSQxjkWdd0YwGWXx-aa3SWz0U7y8KvgmZI6PyUcPqFM9W0Mmsq0dp46Gxo')">
+<div class="absolute inset-0 bg-black/50 flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-3xl">play_circle</span>
+</div>
+</div>
+<p class="text-white text-sm font-medium leading-normal">E05: The Crimson Nebula</p>
+</a>
+</div>
+</div>
+</div>
+</aside>
+</div>
+</div>
+</body></html>

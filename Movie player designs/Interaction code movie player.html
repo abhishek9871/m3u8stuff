@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Modern Movie Player Component</title>
+    
+    <!-- React and related libraries -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/history@5/umd/history.development.js"></script>
+    <script src="https://unpkg.com/react-router@6.3.0/umd/react-router.development.js"></script>
+    <script src="https://unpkg.com/react-router-dom@6.3.0/umd/react-router-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+    <!-- Fonts and Icons -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom hover styles for group-based effects, as Tailwind JIT is not available */
+        .group:hover .group-hover-opacity-100 {
+            opacity: 1;
+        }
+        .group:hover .group-hover-opacity-0 {
+            opacity: 0;
+        }
+    </style>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#3713ec",
+              "background-light": "#f6f6f8",
+              "background-dark": "#131022",
+            },
+            fontFamily: {
+              "display": ["Space Grotesk", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Global variable destructuring (as per requirements)
+        const { useState, useEffect } = React;
+        const { createRoot } = ReactDOM;
+        const { MemoryRouter, Routes, Route, Link, useNavigate } = ReactRouterDOM;
+
+        // --- Reusable Components ---
+
+        const ControlButton = ({ icon, className, size = '3xl' }) => (
+            <button className={`p-2 text-white/80 hover:text-white transition-colors ${className}`}>
+                <span className={`material-symbols-outlined !text-${size}`}>{icon}</span>
+            </button>
+        );
+
+        const TopControls = () => (
+            <div className="absolute top-0 left-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="flex flex-col">
+                    <h2 className="text-white tracking-light text-2xl font-bold leading-tight font-display">Cosmic Odyssey</h2>
+                    <p className="text-white/70 text-sm font-normal leading-normal font-display">Up Next: The Nebula's Secret</p>
+                </div>
+            </div>
+        );
+
+        const CentralPlayButton = () => (
+             <div className="absolute inset-0 flex items-center justify-center">
+                <button className="flex items-center justify-center size-20 bg-black/50 backdrop-blur-sm text-white rounded-full opacity-100 group-hover-opacity-0 hover:bg-primary transition-all duration-300 transform scale-100 hover:scale-110">
+                    <span className="material-symbols-outlined !text-5xl">play_arrow</span>
+                </button>
+            </div>
+        );
+
+        const Timeline = () => (
+            <div className="flex h-5 items-center justify-center group/timeline">
+                <div className="relative w-full h-1 group-hover/timeline:h-2 transition-all duration-200 cursor-pointer">
+                    <div className="h-full rounded-full bg-white/30"></div>
+                    <div className="absolute top-0 left-0 h-full rounded-full bg-primary" style={{ width: '30%' }}></div>
+                    <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 size-4 rounded-full bg-primary scale-0 group-hover/timeline:scale-100 transition-transform duration-200" style={{ left: '30%' }}></div>
+                </div>
+            </div>
+        );
+        
+        const PlaybackControls = () => {
+            const [isPlaying, setIsPlaying] = useState(false);
+            
+            const togglePlay = () => setIsPlaying(!isPlaying);
+
+            return (
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-2">
+                        <button onClick={togglePlay} className="p-2 text-white/80 hover:text-white transition-colors">
+                            <span className="material-symbols-outlined !text-3xl">{isPlaying ? 'pause' : 'play_arrow'}</span>
+                        </button>
+                        <ControlButton icon="replay_10" />
+                        <ControlButton icon="forward_10" />
+                        <div className="flex items-center gap-2 group/volume">
+                            <ControlButton icon="volume_up" size="base"/>
+                            <div className="w-24 h-1 bg-white/30 rounded-full overflow-hidden scale-x-0 group-hover/volume:scale-x-100 origin-left transition-transform duration-200">
+                                <div className="h-full bg-white rounded-full" style={{ width: '75%' }}></div>
+                            </div>
+                        </div>
+                        <div className="flex items-center text-white/80 text-sm font-medium tracking-wider pl-2">
+                            <span>1:15</span>
+                            <span className="px-1">/</span>
+                            <span>4:30</span>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <ControlButton icon="closed_caption" size="base" />
+                        <ControlButton icon="settings" size="base" />
+                        <ControlButton icon="fullscreen" size="base" />
+                    </div>
+                </div>
+            );
+        };
+        
+        const BottomControlBar = () => (
+            <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="flex flex-col gap-3">
+                    <Timeline />
+                    <PlaybackControls />
+                </div>
+            </div>
+        );
+        
+        // --- Screen Component ---
+
+        function MoviePlayerPage() {
+            const backgroundImageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuBgRG2-FYvga868u6VdmjKreTY_dYgAaQ2sz3rD-nqJujoF4BJ08yKCxANMvbEuNtPDX8rVZkrFcZHnJ4MnvRMbWBsqplUJEj2_zuY-gcdPe99N-pLWmeqBxytJAP-R3djvnw3d4AQfU669NfWpvShbYSNLJTs3ivGpXufyqwjLZtdijGe-zAi7ifr5ysY2FXxode1rDo7Eryn1dXu9r8A6EPleI-tWlor19KMbIvfYPCNK1j2gK9EpnOT5hTLxPnsokMHYnx8f_1E";
+
+            return (
+                <div className="flex items-center justify-center min-h-screen w-full p-4 sm:p-8">
+                    <div className="w-full max-w-5xl mx-auto group">
+                        <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl shadow-primary/20">
+                            {/* Main Video Viewport */}
+                            <div 
+                                className="absolute inset-0 bg-cover bg-center" 
+                                data-alt="A vibrant, abstract image of a cinema screen with blurred lights, representing a movie playing." 
+                                style={{ backgroundImage: `url("${backgroundImageUrl}")` }}
+                            >
+                            </div>
+                            {/* Gradient Overlay for Contrast */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/50 opacity-100 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            
+                            {/* Controls */}
+                            <TopControls />
+                            <CentralPlayButton />
+                            <BottomControlBar />
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- App Component ---
+
+        function App() {
+            return (
+                <MemoryRouter>
+                    <Routes>
+                        <Route path="/" element={<MoviePlayerPage />} />
+                    </Routes>
+                </MemoryRouter>
+            );
+        }
+
+        // --- React DOM Rendering ---
+        const container = document.getElementById('root');
+        const root = createRoot(container);
+        root.render(<App />);
+
+    </script>
+</body>
+</html>

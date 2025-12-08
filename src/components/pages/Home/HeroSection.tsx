@@ -33,47 +33,47 @@ const HeroSection: React.FC<HeroSectionProps> = ({ items }) => {
   return (
     <div className="relative h-screen w-full">
       {items.map((item, index) => (
-         <div
-            key={item.id}
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentIndex ? 'opacity-100' : 'opacity-0'}`}
-         >
-            <img
-                src={`${TMDB_IMAGE_BASE_URL}/original${item.backdrop_path}`}
-                alt={'title' in item ? item.title : item.name}
-                className="w-full h-full object-cover"
-                loading="lazy"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/70 to-transparent"></div>
-         </div>
+        <div
+          key={item.id}
+          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentIndex ? 'opacity-100' : 'opacity-0'}`}
+        >
+          <img
+            src={`${TMDB_IMAGE_BASE_URL}/original${item.backdrop_path}`}
+            alt={'title' in item ? item.title : item.name}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/70 to-transparent"></div>
+        </div>
       ))}
-      
+
       <div className="relative z-10 flex flex-col justify-end h-full container mx-auto px-4 pb-20 md:pb-32">
         <div key={activeItem.id} className="max-w-3xl text-white">
-            <h1 className="text-4xl md:text-6xl font-bold font-heading mb-4 animate-fade-in-down">{title}</h1>
-            <div className="flex items-center flex-wrap gap-4 mb-4 text-text-secondary animate-fade-in-up">
-                <div className="flex items-center gap-1">
-                    <FaStar className="text-yellow-400" />
-                    <span>{activeItem.vote_average.toFixed(1)}</span>
-                </div>
-                <span>|</span>
-                <span>{year}</span>
-                <span>|</span>
-                <span className="flex items-center gap-2 border border-text-muted px-2 py-1 rounded-md text-sm">
-                    {mediaType === 'tv' ? <FaTv /> : <FaFilm />} 
-                    {mediaType.toUpperCase()}
-                </span>
+          <h1 className="text-4xl md:text-6xl font-bold font-heading mb-4 animate-fade-in-down">{title}</h1>
+          <div className="flex items-center flex-wrap gap-4 mb-4 text-text-secondary animate-fade-in-up">
+            <div className="flex items-center gap-1">
+              <span className="text-yellow-400"><FaStar /></span>
+              <span>{activeItem.vote_average.toFixed(1)}</span>
             </div>
-            <p className="text-text-secondary text-sm md:text-base line-clamp-3 mb-6 animate-fade-in-up animation-delay-200">{activeItem.overview}</p>
-            <div className="flex items-center gap-4 animate-fade-in-up animation-delay-400">
-                <Link to={`/${mediaType}/${activeItem.id}?autoplay=true`} className="flex items-center gap-2 px-6 py-3 bg-accent-primary text-white font-semibold rounded-lg hover:bg-red-700 transition-colors shadow-lg">
-                    <FaPlay />
-                    <span>Play Now</span>
-                </Link>
-                <Link to={`/${mediaType}/${activeItem.id}`} className="flex items-center gap-2 px-6 py-3 bg-surface/80 backdrop-blur-sm text-white font-semibold rounded-lg hover:bg-surface transition-colors">
-                    <FaInfoCircle />
-                    <span>More Info</span>
-                </Link>
-            </div>
+            <span>|</span>
+            <span>{year}</span>
+            <span>|</span>
+            <span className="flex items-center gap-2 border border-text-muted px-2 py-1 rounded-md text-sm">
+              {mediaType === 'tv' ? <FaTv /> : <FaFilm />}
+              {mediaType.toUpperCase()}
+            </span>
+          </div>
+          <p className="text-text-secondary text-sm md:text-base line-clamp-3 mb-6 animate-fade-in-up animation-delay-200">{activeItem.overview}</p>
+          <div className="flex items-center gap-4 animate-fade-in-up animation-delay-400">
+            <Link to={`/${mediaType}/${activeItem.id}?autoplay=true`} className="flex items-center gap-2 px-6 py-3 bg-accent-primary text-white font-semibold rounded-lg hover:bg-red-700 transition-colors shadow-lg">
+              <FaPlay />
+              <span>Play Now</span>
+            </Link>
+            <Link to={`/${mediaType}/${activeItem.id}`} className="flex items-center gap-2 px-6 py-3 bg-surface/80 backdrop-blur-sm text-white font-semibold rounded-lg hover:bg-surface transition-colors">
+              <FaInfoCircle />
+              <span>More Info</span>
+            </Link>
+          </div>
         </div>
       </div>
       <div className="absolute bottom-16 md:bottom-28 left-1/2 -translate-x-1/2 z-20 flex gap-2">

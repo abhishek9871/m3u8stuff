@@ -19,7 +19,7 @@ const CastCard: React.FC<CastCardProps> = ({ person }) => {
         {imageUrl ? (
           <img src={imageUrl} alt={person.name} className="w-full h-full object-cover" loading="lazy" />
         ) : (
-          <FaUserCircle className="text-5xl text-text-muted" />
+          <span className="text-5xl text-text-muted"><FaUserCircle /></span>
         )}
       </div>
       <p className="mt-2 text-sm font-semibold text-text-primary">{person.name}</p>

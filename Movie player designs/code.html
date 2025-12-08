@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Modern Movie Player Component</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .group:hover .group-hover-opacity-100 {
+            opacity: 1;
+        }
+        .group:hover .group-hover-opacity-0 {
+            opacity: 0;
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#3713ec",
+              "background-light": "#f6f6f8",
+              "background-dark": "#131022",
+            },
+            fontFamily: {
+              "display": ["Space Grotesk", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+<div class="flex items-center justify-center min-h-screen w-full p-4 sm:p-8">
+<div class="w-full max-w-5xl mx-auto group">
+<div class="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl shadow-primary/20">
+<!-- Main Video Viewport -->
+<div class="absolute inset-0 bg-cover bg-center" data-alt="A vibrant, abstract image of a cinema screen with blurred lights, representing a movie playing." style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBgRG2-FYvga868u6VdmjKreTY_dYgAaQ2sz3rD-nqJujoF4BJ08yKCxANMvbEuNtPDX8rVZkrFcZHnJ4MnvRMbWBsqplUJEj2_zuY-gcdPe99N-pLWmeqBxytJAP-R3djvnw3d4AQfU669NfWpvShbYSNLJTs3ivGpXufyqwjLZtdijGe-zAi7ifr5ysY2FXxode1rDo7Eryn1dXu9r8A6EPleI-tWlor19KMbIvfYPCNK1j2gK9EpnOT5hTLxPnsokMHYnx8f_1E");'>
+</div>
+<!-- Gradient Overlay for Contrast -->
+<div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/50 opacity-100 group-hover:opacity-100 transition-opacity duration-300"></div>
+<!-- Top Controls (Title & Metadata) -->
+<div class="absolute top-0 left-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<div class="flex flex-col">
+<h2 class="text-white tracking-light text-2xl font-bold leading-tight font-display">Cosmic Odyssey</h2>
+<p class="text-white/70 text-sm font-normal leading-normal font-display">Up Next: The Nebula's Secret</p>
+</div>
+</div>
+<!-- Central Play/Pause Button -->
+<div class="absolute inset-0 flex items-center justify-center">
+<button class="flex items-center justify-center size-20 bg-black/50 backdrop-blur-sm text-white rounded-full opacity-100 group-hover-opacity-0 hover:bg-primary transition-all duration-300 transform scale-100 hover:scale-110">
+<span class="material-symbols-outlined !text-5xl">play_arrow</span>
+</button>
+</div>
+<!-- Bottom Control Bar -->
+<div class="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover-opacity-100 transition-opacity duration-300">
+<div class="flex flex-col gap-3">
+<!-- Interactive Timeline / Scrub Bar -->
+<div class="flex h-5 items-center justify-center group/timeline">
+<div class="relative w-full h-1 group-hover/timeline:h-2 transition-all duration-200 cursor-pointer">
+<div class="h-full rounded-full bg-white/30"></div>
+<div class="absolute top-0 left-0 h-full rounded-full bg-primary" style="width: 30%;"></div>
+<div class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 size-4 rounded-full bg-primary scale-0 group-hover/timeline:scale-100 transition-transform duration-200" style="left: 30%;"></div>
+</div>
+</div>
+<!-- Playback Controls -->
+<div class="flex items-center justify-between gap-4">
+<div class="flex items-center gap-2">
+<button class="p-2 text-white/80 hover:text-white transition-colors">
+<span class="material-symbols-outlined !text-3xl">play_arrow</span>
+</button>
+<button class="p-2 text-white/80 hover:text-white transition-colors">
+<span class="material-symbols-outlined">replay_10</span>
+</button>
+<button class="p-2 text-white/80 hover:text-white transition-colors">
+<span class="material-symbols-outlined">forward_10</span>
+</button>
+<div class="flex items-center gap-2 group/volume">
+<button class="p-2 text-white/80 hover:text-white transition-colors">
+<span class="material-symbols-outlined">volume_up</span>
+</button>
+<div class="w-24 h-1 bg-white/30 rounded-full overflow-hidden scale-x-0 group-hover/volume:scale-x-100 origin-left transition-transform duration-200">
+<div class="h-full bg-white rounded-full" style="width: 75%;"></div>
+</div>
+</div>
+<div class="flex items-center text-white/80 text-sm font-medium tracking-wider pl-2">
+<span>1:15</span>
+<span class="px-1">/</span>
+<span>4:30</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-white/80 hover:text-white transition-colors">
+<span class="material-symbols-outlined">closed_caption</span>
+</button>
+<button class="p-2 text-white/80 hover:text-white transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<button class="p-2 text-white/80 hover:text-white transition-colors">
+<span class="material-symbols-outlined">fullscreen</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body></html>

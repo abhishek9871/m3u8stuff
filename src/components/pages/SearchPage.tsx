@@ -27,7 +27,7 @@ const SearchPage: React.FC = () => {
   const [results, setResults] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<'all' | 'movie' | 'tv'>('all');
-  
+
   const debouncedQuery = useDebounce(query, 500);
 
   useEffect(() => {
@@ -51,16 +51,16 @@ const SearchPage: React.FC = () => {
     };
 
     performSearch();
-    
+
     // Update URL param
     if (debouncedQuery.trim()) {
-        setSearchParams({ q: debouncedQuery });
+      setSearchParams({ q: debouncedQuery });
     } else {
-        setSearchParams({});
+      setSearchParams({});
     }
 
   }, [debouncedQuery, setSearchParams]);
-  
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
   }
@@ -80,11 +80,10 @@ const SearchPage: React.FC = () => {
   const FilterButton: React.FC<{ type: 'all' | 'movie' | 'tv'; label: string }> = ({ type, label }) => (
     <button
       onClick={() => setFilter(type)}
-      className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
-        filter === type
+      className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${filter === type
           ? 'bg-accent-primary text-white'
           : 'bg-surface text-text-secondary hover:bg-surface-hover'
-      }`}
+        }`}
     >
       {label}
     </button>
@@ -103,10 +102,10 @@ const SearchPage: React.FC = () => {
             className="w-full pl-12 pr-4 py-3 bg-surface rounded-lg text-xl text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary"
             aria-label="Search for movies and TV shows"
           />
-          <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted text-xl" />
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted text-xl flex items-center justify-center pointer-events-none"><FaSearch /></span>
         </div>
       </div>
-      
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h2 className="text-xl font-semibold">{resultTitle}</h2>
         {results.length > 0 && (
@@ -120,25 +119,25 @@ const SearchPage: React.FC = () => {
 
       {loading ? (
         <div className="flex justify-center items-center h-64">
-           <Loader />
+          <Loader />
         </div>
       ) : (
-         filteredResults.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {filteredResults.map(item => (
-                    item.poster_path ? <ContentCard key={`${item.id}-${item.media_type}`} item={item} /> : null
-                ))}
-            </div>
-         ) : (
-            <div className="text-center py-20">
-                <p className="text-xl text-text-secondary">
-                    {debouncedQuery ? 'Nothing to show here.' : 'Start typing to see magic happen.'}
-                </p>
-                <p className="mt-2 text-text-muted">
-                    {debouncedQuery ? 'Try a different search term.' : 'Search for movies and TV shows.'}
-                </p>
-            </div>
-         )
+        filteredResults.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            {filteredResults.map(item => (
+              item.poster_path ? <ContentCard key={`${item.id}-${item.media_type}`} item={item} /> : null
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20">
+            <p className="text-xl text-text-secondary">
+              {debouncedQuery ? 'Nothing to show here.' : 'Start typing to see magic happen.'}
+            </p>
+            <p className="mt-2 text-text-muted">
+              {debouncedQuery ? 'Try a different search term.' : 'Search for movies and TV shows.'}
+            </p>
+          </div>
+        )
       )}
     </div>
   );

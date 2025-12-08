@@ -264,7 +264,7 @@ const TVDetail: React.FC = () => {
                   {/* Metadata Row */}
                   <div className="flex items-center gap-3 text-sm md:text-base text-white/90">
                     <span className="flex items-center gap-1 text-green-400 font-semibold">
-                      <FaStar className="text-yellow-400" /> {show.vote_average.toFixed(1)}
+                      <span className="text-yellow-400"><FaStar /></span> {show.vote_average.toFixed(1)}
                     </span>
                     <span className="text-white/60">|</span>
                     <span>{firstAirYear}</span>
@@ -366,10 +366,9 @@ const TVDetail: React.FC = () => {
                   className="flex items-center gap-3 bg-transparent border-2 border-white/30 hover:border-white/50 rounded px-4 py-2.5 text-white font-medium transition-all duration-200 min-w-[140px] justify-between"
                 >
                   <span>Season {selectedSeason}</span>
-                  <FaChevronDown
-                    className={`transition-transform duration-200 ${isSeasonDropdownOpen ? 'rotate-180' : ''}`}
-                    size={12}
-                  />
+                  <span className={`flex items-center transition-transform duration-200 ${isSeasonDropdownOpen ? 'rotate-180' : ''}`}>
+                    <FaChevronDown size={12} />
+                  </span>
                 </button>
 
                 {/* Dropdown menu */}
@@ -384,13 +383,13 @@ const TVDetail: React.FC = () => {
                             setIsSeasonDropdownOpen(false);
                           }}
                           className={`w-full text-left px-4 py-3 text-sm transition-colors duration-150 flex items-center justify-between ${selectedSeason === season.season_number
-                              ? 'bg-white/10 text-white font-medium'
-                              : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                            ? 'bg-white/10 text-white font-medium'
+                            : 'text-gray-300 hover:bg-white/5 hover:text-white'
                             }`}
                         >
                           <span>Season {season.season_number}</span>
                           {selectedSeason === season.season_number && (
-                            <FaCheck size={12} className="text-white" />
+                            <span className="text-white"><FaCheck size={12} /></span>
                           )}
                         </button>
                       ))}
@@ -426,7 +425,7 @@ const TVDetail: React.FC = () => {
                       </div>
                     )}
                     <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <FaPlay className="text-white text-2xl" />
+                      <span className="text-white text-2xl"><FaPlay /></span>
                     </div>
                   </div>
 
@@ -447,8 +446,8 @@ const TVDetail: React.FC = () => {
                           toggleEpisodeWatched(String(show.id), selectedSeason, episode.episode_number);
                         }}
                         className={`p-2 rounded-full transition-colors ${isEpisodeWatched(String(show.id), selectedSeason, episode.episode_number)
-                            ? 'text-green-500'
-                            : 'text-text-muted hover:text-white'
+                          ? 'text-green-500'
+                          : 'text-text-muted hover:text-white'
                           }`}
                       >
                         <FaCheckCircle size={20} />

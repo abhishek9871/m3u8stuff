@@ -1,4 +1,4 @@
-import React, { ErrorInfo, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { FaExclamationTriangle } from 'react-icons/fa';
 
 interface Props {
@@ -11,10 +11,16 @@ interface State {
 }
 
 // FIX: The ErrorBoundary class must extend React.Component to be a valid class component and have access to props and lifecycle methods.
-class ErrorBoundary extends React.Component<Props, State> {
+class ErrorBoundary extends Component<Props, State> {
   public state: State = {
-    hasError: false,
+    hasError: false
   };
+
+  public readonly props!: Readonly<Props>;
+
+  constructor(props: Props) {
+    super(props);
+  }
 
   public static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
@@ -28,7 +34,7 @@ class ErrorBoundary extends React.Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-bg-primary text-text-primary flex flex-col items-center justify-center text-center p-4">
-          <FaExclamationTriangle className="text-5xl text-error mb-4" />
+          <span className="text-5xl text-error mb-4"><FaExclamationTriangle /></span>
           <h1 className="text-3xl font-bold font-heading mb-2">Oops! Something went wrong.</h1>
           <p className="text-text-secondary mb-6">We're sorry for the inconvenience. Please try refreshing the page.</p>
           <button
