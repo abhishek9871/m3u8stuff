@@ -149,6 +149,7 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
     // Mobile Gesture State
     const [brightness, setBrightness] = useState(1); // 0.2 to 2.0 range
     const [isZoomToFill, setIsZoomToFill] = useState(false); // Zoom to fill for mobile
+    const [isFullscreen, setIsFullscreen] = useState(false); // Track fullscreen state
     const [gestureIndicator, setGestureIndicator] = useState<{
         type: 'volume' | 'brightness' | 'seek-forward' | 'seek-backward' | 'zoom';
         value: number | string;
@@ -157,6 +158,15 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
     const lastTapRef = useRef<{ time: number; x: number } | null>(null);
     const gestureIndicatorTimeoutRef = useRef<number | null>(null);
     const initialPinchDistanceRef = useRef<number | null>(null);
+
+    // Track fullscreen state changes
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    }, []);
 
     // Show gesture indicator with auto-hide
     const showGestureIndicatorWithTimeout = useCallback((indicator: typeof gestureIndicator) => {
@@ -213,6 +223,8 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
 
         // Don't handle gestures when menus are open
         if (showSubtitleMenu || showQualityMenu || showSpeedMenu) return;
+        // Only allow volume/brightness gestures in fullscreen mode on mobile (prevent page scroll interference)
+        if (!isFullscreen) return;
         if (!touchStartRef.current || !containerRef.current || !videoRef.current) return;
 
         const touch = e.touches[0];
@@ -262,8 +274,8 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
         const rect = containerRef.current.getBoundingClientRect();
         const isRightHalf = touch.clientX > rect.left + rect.width / 2;
 
-        // Check for double tap (within 300ms)
-        if (lastTapRef.current && now - lastTapRef.current.time < 300) {
+        // Check for double tap (within 300ms) - only works in fullscreen mode
+        if (isFullscreen && lastTapRef.current && now - lastTapRef.current.time < 300) {
             // Verify taps are on same side
             const lastTapRightHalf = lastTapRef.current.x > rect.left + rect.width / 2;
             if (isRightHalf === lastTapRightHalf) {
@@ -289,16 +301,18 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
             const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
 
             if (touchDuration < 300 && deltaX < 20 && deltaY < 20) {
-                // This was a tap, record it for potential double-tap
-                lastTapRef.current = { time: now, x: touch.clientX };
+                // This was a tap, record it for potential double-tap (only in fullscreen)
+                if (isFullscreen) {
+                    lastTapRef.current = { time: now, x: touch.clientX };
+                }
 
-                // Single tap only shows controls (doesn't toggle play)
+                // Single tap shows controls (works in all modes)
                 resetHideControlsTimer();
             }
         }
 
         touchStartRef.current = null;
-    }, [showGestureIndicatorWithTimeout, resetHideControlsTimer, showSubtitleMenu, showQualityMenu]);
+    }, [showGestureIndicatorWithTimeout, resetHideControlsTimer, showSubtitleMenu, showQualityMenu, showSpeedMenu, isFullscreen]);
 
     // Initialize HLS
     useEffect(() => {
@@ -843,7 +857,7 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                                 />
                                 {showSubtitleMenu && (
                                     <div
-                                        className="absolute bottom-12 right-0 w-64 md:w-80 bg-black/95 backdrop-blur-md border border-white/20 rounded-lg shadow-2xl overflow-hidden max-h-72 overflow-y-auto scrollbar-thin"
+                                        className="absolute bottom-12 right-0 w-56 md:w-80 bg-black/95 backdrop-blur-md border border-white/20 rounded-lg shadow-2xl overflow-hidden max-h-40 md:max-h-72 overflow-y-auto scrollbar-thin"
                                         onTouchStart={(e) => e.stopPropagation()}
                                         onTouchMove={(e) => e.stopPropagation()}
                                     >
@@ -876,7 +890,7 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                                 />
                                 {showQualityMenu && (
                                     <div
-                                        className="absolute bottom-12 right-0 w-32 bg-background-dark/95 backdrop-blur-md border border-white/10 rounded-lg shadow-xl overflow-hidden"
+                                        className="absolute bottom-12 right-0 w-28 md:w-32 bg-background-dark/95 backdrop-blur-md border border-white/10 rounded-lg shadow-xl overflow-hidden max-h-40 md:max-h-60 overflow-y-auto scrollbar-thin"
                                         onTouchStart={(e) => e.stopPropagation()}
                                         onTouchMove={(e) => e.stopPropagation()}
                                     >
@@ -914,7 +928,7 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                                 </button>
                                 {showSpeedMenu && (
                                     <div
-                                        className="absolute bottom-12 right-0 w-28 bg-background-dark/95 backdrop-blur-md border border-white/10 rounded-lg shadow-xl overflow-hidden"
+                                        className="absolute bottom-12 right-0 w-24 md:w-28 bg-background-dark/95 backdrop-blur-md border border-white/10 rounded-lg shadow-xl overflow-hidden max-h-40 md:max-h-60 overflow-y-auto scrollbar-thin"
                                         onTouchStart={(e) => e.stopPropagation()}
                                         onTouchMove={(e) => e.stopPropagation()}
                                     >
