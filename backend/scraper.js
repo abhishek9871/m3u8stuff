@@ -167,14 +167,19 @@ app.get('/api/extract', async (req, res) => {
                     break;
                 }
 
+                // 💓 PULSE CLICK: Retry interaction every 5 seconds if nothing found
+                // This handles cases where the first click hit a popup, and now the player is idle
+                if (attempts > 0 && attempts % 5 === 0) {
+                    console.log(`[Extract] 💓 Pulse ${attempts}s: Re-clicking Play...`);
+                    await tryClickPlay(page);
+                }
+
                 await new Promise(r => setTimeout(r, 1000));
                 attempts++;
             }
 
             if (foundMedia) {
                 usedProvider = provider.name;
-                // If we found *something*, we consider this provider a success. 
-                // We only loop to next provider if foundMedia is STILL null.
                 break;
             } else {
                 console.log(`[Extract] ❌ No media found on ${provider.name} after ${attempts}s, trying next...`);
@@ -205,6 +210,35 @@ app.get('/api/extract', async (req, res) => {
     }
 });
 
+async function tryClickPlay(page) {
+    try {
+        // Expanded selectors for new API/Player skins
+        const playSelectors = [
+            '#player_code',
+            '.play-btn',
+            '#play-button',
+            'div[class*="play"]',
+            'button[class*="play"]',
+            '.jw-display-icon-container', // JW Player common
+            'video'
+        ];
+
+        for (const sel of playSelectors) {
+            try {
+                const el = await page.$(sel);
+                if (el && await el.isVisible()) {
+                    await el.click();
+                    // console.log(`[Clicker] Clicked ${sel}`);
+                    return; // Return after first successful click to avoid spamming
+                }
+            } catch (e) { }
+        }
+
+        // Center click backup - often works for overlays
+        await page.mouse.click(640, 360);
+    } catch (e) { }
+}
+
 async function handlePageInteraction(page, providerName) {
     // 1. Cloudflare Check (Aggressive)
     const title = await page.title();
@@ -227,37 +261,9 @@ async function handlePageInteraction(page, providerName) {
         await new Promise(r => setTimeout(r, 4000));
     }
 
-    // 2. Play Button Click (Crucial for vidsrc)
-    try {
-        console.log('[Clicker] Looking for Play button...');
-        // Expanded selectors for new API/Player skins
-        const playSelectors = [
-            '#player_code',
-            '.play-btn',
-            '#play-button',
-            'div[class*="play"]',
-            'button[class*="play"]',
-            '.jw-display-icon-container', // JW Player common
-            'video'
-        ];
-
-        for (const sel of playSelectors) {
-            try {
-                const el = await page.$(sel);
-                if (el && await el.isVisible()) {
-                    await el.click();
-                    console.log(`[Clicker] Clicked ${sel}`);
-                    await new Promise(r => setTimeout(r, 1000)); // Wait for reaction
-
-                    // Sometimes a second click is needed (unmute/start)
-                    await el.click().catch(() => { });
-                }
-            } catch (e) { }
-        }
-
-        // Center click backup - often works for overlays
-        await page.mouse.click(640, 360);
-    } catch (e) { }
+    // 2. Initial Play Button Click
+    console.log('[Clicker] Initial Play Button hunt...');
+    await tryClickPlay(page);
 }
 
 // 🌐 PROXY ENDPOINT - Rewrites M3U8 URLs to route through proxy
