@@ -3,6 +3,10 @@ import Hls from 'hls.js';
 import type { ExtractedStream, SubtitleTrack } from '../../types/stream';
 import './NativePlayer.css';
 
+// Volume adjustment step for keyboard controls
+const VOLUME_STEP = 0.1;
+const SEEK_STEP = 10;
+
 interface NativePlayerProps {
     extracted: ExtractedStream;
     title?: string;
@@ -69,6 +73,8 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
     const [isMuted, setIsMuted] = useState(false);
     const [isHovering, setIsHovering] = useState(false);
     const [isScrubbing, setIsScrubbing] = useState(false);
+    const [isVolumeScrubbing, setIsVolumeScrubbing] = useState(false);
+    const volumeBarRef = useRef<HTMLDivElement>(null);
 
     // Quality State
     const [quality, setQuality] = useState<number>(-1);
@@ -308,22 +314,111 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
         setIsMuted(videoRef.current.muted);
     };
 
-    const handleVolumeClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!videoRef.current) return;
-        const rect = e.currentTarget.getBoundingClientRect();
-        const percent = Math.min(Math.max(0, e.clientX - rect.left), rect.width) / rect.width;
+    const handleVolumeChange = useCallback((clientX: number) => {
+        if (!videoRef.current || !volumeBarRef.current) return;
+        const rect = volumeBarRef.current.getBoundingClientRect();
+        const percent = Math.min(Math.max(0, clientX - rect.left), rect.width) / rect.width;
 
-        // Set volume state and video volume
         const newVolume = Math.max(0, Math.min(1, percent));
         setVolume(newVolume);
         videoRef.current.volume = newVolume;
 
-        // Unmute if volume > 0
         if (newVolume > 0 && isMuted) {
             setIsMuted(false);
             videoRef.current.muted = false;
         }
+    }, [isMuted]);
+
+    const handleVolumeMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+        setIsVolumeScrubbing(true);
+        handleVolumeChange(e.clientX);
     };
+
+    const handleVolumeMouseMove = useCallback((e: MouseEvent) => {
+        if (isVolumeScrubbing) {
+            handleVolumeChange(e.clientX);
+        }
+    }, [isVolumeScrubbing, handleVolumeChange]);
+
+    const handleVolumeMouseUp = useCallback(() => {
+        setIsVolumeScrubbing(false);
+    }, []);
+
+    // Global mouse events for volume scrubbing
+    useEffect(() => {
+        if (isVolumeScrubbing) {
+            document.addEventListener('mousemove', handleVolumeMouseMove);
+            document.addEventListener('mouseup', handleVolumeMouseUp);
+        }
+        return () => {
+            document.removeEventListener('mousemove', handleVolumeMouseMove);
+            document.removeEventListener('mouseup', handleVolumeMouseUp);
+        };
+    }, [isVolumeScrubbing, handleVolumeMouseMove, handleVolumeMouseUp]);
+
+    // Keyboard controls
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Only handle if player container is focused or in fullscreen
+            if (!containerRef.current) return;
+            const isPlayerFocused = containerRef.current.contains(document.activeElement) || document.fullscreenElement === containerRef.current;
+            if (!isPlayerFocused && !document.fullscreenElement) return;
+
+            switch (e.code) {
+                case 'Space':
+                case 'KeyK':
+                    e.preventDefault();
+                    togglePlay();
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    handleSeek(-SEEK_STEP);
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    handleSeek(SEEK_STEP);
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    if (videoRef.current) {
+                        const newVol = Math.min(1, videoRef.current.volume + VOLUME_STEP);
+                        videoRef.current.volume = newVol;
+                        setVolume(newVol);
+                        if (isMuted) {
+                            setIsMuted(false);
+                            videoRef.current.muted = false;
+                        }
+                    }
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    if (videoRef.current) {
+                        const newVol = Math.max(0, videoRef.current.volume - VOLUME_STEP);
+                        videoRef.current.volume = newVol;
+                        setVolume(newVol);
+                    }
+                    break;
+                case 'KeyM':
+                    e.preventDefault();
+                    toggleMute();
+                    break;
+                case 'KeyF':
+                    e.preventDefault();
+                    toggleFullscreen();
+                    break;
+                case 'Escape':
+                    if (document.fullscreenElement) {
+                        document.exitFullscreen();
+                    } else if (onClose) {
+                        onClose();
+                    }
+                    break;
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [isMuted, onClose]);
 
     // Progress Bar Width
     const progressPercent = duration ? (currentTime / duration) * 100 : 0;
@@ -331,7 +426,8 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
     return (
         <div
             ref={containerRef}
-            className="flex items-center justify-center w-full h-full bg-black group relative overflow-hidden font-display"
+            tabIndex={0}
+            className="flex items-center justify-center w-full h-full bg-black group relative overflow-hidden font-display outline-none"
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
         >
@@ -362,17 +458,12 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
             {/* Gradient Overlay */}
             <div className={`absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/50 transition-opacity duration-300 pointer-events-none ${isHovering || !isPlaying ? 'opacity-100' : 'opacity-0'}`}></div>
 
-            {/* Top Controls (Title) */}
+            {/* Top Controls (Title + Close) - Always visible on hover or pause */}
             <div className={`absolute top-0 left-0 right-0 p-6 transition-opacity duration-300 ${isHovering || !isPlaying ? 'opacity-100' : 'opacity-0'}`}>
                 <div className="flex justify-between items-start">
-                    <div className="flex flex-col">
-                        <h2 className="text-white tracking-light text-2xl font-bold leading-tight drop-shadow-lg">{title}</h2>
-                        {extracted.subtitles && extracted.subtitles.length > 0 && (
-                            <p className="text-white/70 text-sm font-normal leading-normal">{activeSubtitle ? 'CC On' : 'CC Off'}</p>
-                        )}
-                    </div>
+                    <h2 className="text-white font-heading text-2xl md:text-3xl font-bold tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">{title}</h2>
                     {onClose && (
-                        <button onClick={onClose} className="text-white/80 hover:text-white p-2 bg-black/20 rounded-full hover:bg-black/40 transition-all">
+                        <button onClick={onClose} className="text-white/80 hover:text-white p-2 bg-black/30 rounded-full hover:bg-black/60 transition-all backdrop-blur-sm">
                             <span className="material-symbols-outlined">close</span>
                         </button>
                     )}
@@ -392,7 +483,8 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
             )}
 
             {/* Bottom Control Bar */}
-            <div className={`absolute bottom-0 left-0 right-0 p-4 transition-opacity duration-300 ${isHovering || !isPlaying ? 'opacity-100' : 'opacity-0'}`}>
+            {/* Bottom Control Bar - Only visible on hover */}
+            <div className={`absolute bottom-0 left-0 right-0 p-4 transition-opacity duration-300 ${isHovering ? 'opacity-100' : 'opacity-0'}`}>
                 <div className="flex flex-col gap-3">
 
                     {/* Timeline */}
@@ -432,11 +524,12 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                                     onClick={toggleMute}
                                 />
                                 <div
-                                    className="w-24 h-1 bg-white/30 rounded-full overflow-hidden scale-x-0 group-hover/volume:scale-x-100 origin-left transition-transform duration-200 cursor-pointer"
-                                    onClick={handleVolumeClick}
+                                    ref={volumeBarRef}
+                                    className="w-24 h-2 bg-white/30 rounded-full overflow-hidden scale-x-0 group-hover/volume:scale-x-100 origin-left transition-transform duration-200 cursor-pointer"
+                                    onMouseDown={handleVolumeMouseDown}
                                 >
                                     <div
-                                        className="h-full bg-white rounded-full"
+                                        className="h-full bg-white rounded-full pointer-events-none"
                                         style={{ width: `${isMuted ? 0 : volume * 100}%` }}
                                     ></div>
                                 </div>
@@ -459,10 +552,10 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                                     onClick={() => { setShowSubtitleMenu(!showSubtitleMenu); setShowQualityMenu(false); }}
                                 />
                                 {showSubtitleMenu && (
-                                    <div className="absolute bottom-12 right-0 w-48 bg-background-dark/95 backdrop-blur-md border border-white/10 rounded-lg shadow-xl overflow-hidden max-h-64 overflow-y-auto scrollbar-thin">
-                                        <div className="px-3 py-2 text-xs font-bold text-white/50 uppercase border-b border-white/10">Subtitles</div>
+                                    <div className="absolute bottom-12 right-0 w-80 bg-black/95 backdrop-blur-md border border-white/20 rounded-lg shadow-2xl overflow-hidden max-h-72 overflow-y-auto scrollbar-thin">
+                                        <div className="px-4 py-2.5 text-xs font-bold text-white/60 uppercase border-b border-white/20 bg-white/5">Subtitles</div>
                                         <button
-                                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${!activeSubtitle ? 'text-primary font-bold' : 'text-white/80'}`}
+                                            className={`w-full text-left px-4 py-2.5 text-sm hover:bg-white/10 transition-colors ${!activeSubtitle ? 'text-green-400 font-semibold' : 'text-white'}`}
                                             onClick={() => handleSubtitleChange(null)}
                                         >
                                             Off
@@ -470,7 +563,7 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                                         {extracted.subtitles?.map((sub, i) => (
                                             <button
                                                 key={i}
-                                                className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${activeSubtitle === sub.file ? 'text-primary font-bold' : 'text-white/80'}`}
+                                                className={`w-full text-left px-4 py-2.5 text-sm hover:bg-white/10 transition-colors whitespace-normal break-words ${activeSubtitle === sub.file ? 'text-green-400 font-semibold' : 'text-white'}`}
                                                 onClick={() => handleSubtitleChange(sub.file)}
                                             >
                                                 {sub.label}

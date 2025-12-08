@@ -170,13 +170,6 @@ const MovieDetail: React.FC = () => {
               />
             )}
 
-            {/* Close button overlay */}
-            <button
-              onClick={handleClosePlayer}
-              className="absolute top-4 left-4 z-30 p-3 rounded-full bg-black/70 hover:bg-black/90 text-white transition-colors backdrop-blur-sm"
-            >
-              <FaTimes size={18} />
-            </button>
           </>
         ) : (
           <>
