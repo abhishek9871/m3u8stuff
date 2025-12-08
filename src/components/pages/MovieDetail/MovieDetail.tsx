@@ -9,7 +9,7 @@ import { streamExtractor } from '../../../services/streamExtractor';
 import Loader from '../../common/Loader';
 import ContentCarousel from '../Home/ContentCarousel';
 import CastCard from './CastCard';
-import { NativePlayer } from '../../common/NativePlayer';
+import { MoviePlayer } from '../../common/MoviePlayer';
 import { FaPlay, FaPlus, FaCheck, FaStar, FaTimes } from 'react-icons/fa';
 
 const MovieDetail: React.FC = () => {
@@ -144,14 +144,15 @@ const MovieDetail: React.FC = () => {
               </div>
             )}
 
-            {/* NativePlayer when stream is extracted */}
+            {/* MoviePlayer when stream is extracted */}
             {extractedStream && !useFallbackIframe && (
               <div className="absolute inset-0">
-                <NativePlayer
+                <MoviePlayer
                   extracted={extractedStream}
                   title={movie.title}
                   poster={movie.backdrop_path ? `${TMDB_IMAGE_BASE_URL}/w780${movie.backdrop_path}` : undefined}
                   autoplay={true}
+                  onClose={handleClosePlayer}
                 />
               </div>
             )}
