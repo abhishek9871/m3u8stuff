@@ -164,7 +164,7 @@ export const NativePlayer: React.FC<NativePlayerProps> = ({
     // Ignore if clicking on controls
     const target = e.target as HTMLElement;
     if (target.closest('.native-player__controls') ||
-        target.closest('.native-player__control-group')) {
+      target.closest('.native-player__control-group')) {
       return;
     }
 
@@ -280,7 +280,18 @@ export const NativePlayer: React.FC<NativePlayerProps> = ({
           .sort((a, b) => b.height - a.height); // Sort highest first
 
         setQualities(qualityList);
-        setQuality(-1);
+
+        // Force start at highest quality (index 0 after sort)
+        if (qualityList.length > 0) {
+          const bestQualityIndex = qualityList[0].index;
+          console.log(`[NativePlayer] Force starting at highest quality: ${qualityList[0].label} (index ${bestQualityIndex})`);
+          hls.startLevel = bestQualityIndex;
+          hls.currentLevel = bestQualityIndex;
+          setQuality(bestQualityIndex);
+        } else {
+          setQuality(-1);
+        }
+
         setLoading(false);
 
         // Add subtitle tracks after manifest is ready
@@ -457,14 +468,14 @@ export const NativePlayer: React.FC<NativePlayerProps> = ({
               {seekIndicator.direction === 'forward' ? (
                 <>
                   <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
-                    <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/>
+                    <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z" />
                   </svg>
                   <span>{SEEK_SECONDS}s</span>
                 </>
               ) : (
                 <>
                   <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
-                    <path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/>
+                    <path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z" />
                   </svg>
                   <span>{SEEK_SECONDS}s</span>
                 </>
@@ -488,7 +499,7 @@ export const NativePlayer: React.FC<NativePlayerProps> = ({
                   title="Video Quality"
                 >
                   <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-8 12H9.5v-2h-2v2H6V9h1.5v2.5h2V9H11v6zm7-1c0 .55-.45 1-1 1h-.75v1.5h-1.5V15H14c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v4zm-3.5-.5h2v-3h-2v3z"/>
+                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-8 12H9.5v-2h-2v2H6V9h1.5v2.5h2V9H11v6zm7-1c0 .55-.45 1-1 1h-.75v1.5h-1.5V15H14c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v4zm-3.5-.5h2v-3h-2v3z" />
                   </svg>
                   <span className="native-player__control-label">{currentQualityLabel}</span>
                 </button>
@@ -530,7 +541,7 @@ export const NativePlayer: React.FC<NativePlayerProps> = ({
                   title="Subtitles"
                 >
                   <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                    <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM4 12h4v2H4v-2zm10 6H4v-2h10v2zm6 0h-4v-2h4v2zm0-4H10v-2h10v2z"/>
+                    <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM4 12h4v2H4v-2zm10 6H4v-2h10v2zm6 0h-4v-2h4v2zm0-4H10v-2h10v2z" />
                   </svg>
                   <span className="native-player__control-label">{activeSubtitleLabel}</span>
                 </button>

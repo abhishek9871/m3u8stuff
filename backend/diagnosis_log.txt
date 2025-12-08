@@ -1,0 +1,56 @@
+[2025-12-08T08:14:47.466Z] Starting Diagnosis...
+[2025-12-08T08:14:49.660Z] 
+--- Testing: Two and a Half Men ---
+[2025-12-08T08:14:49.661Z] Navigating to: https://vidsrc-embed.ru/embed/tv/1400/1/1
+[2025-12-08T08:15:02.360Z] Page Title: Seinfeld (1989) S01E01
+[2025-12-08T08:15:02.361Z] 
+--- Testing: Lost in Space (2018) ---
+[2025-12-08T08:15:02.361Z] Navigating to: https://vidsrc-embed.ru/embed/tv/75758/1/1
+[2025-12-08T08:15:12.846Z] Page Title: Lost in Space (2018) (2018) S01E01
+[2025-12-08T08:15:12.846Z] 
+--- Testing: Tron: Ares ---
+[2025-12-08T08:15:12.847Z] Navigating to: https://vidsrc-embed.ru/embed/movie/533533
+[2025-12-08T08:15:23.414Z] Page Title: TRON: Ares (2025)
+[2025-12-08T08:15:23.414Z] 
+--- Testing: Bugonia ---
+[2025-12-08T08:15:23.415Z] Navigating to: https://vidsrc-embed.ru/embed/movie/701387
+[2025-12-08T08:15:33.963Z] Page Title: Bugonia (2025)
+[2025-12-08T08:15:34.357Z] Diagnosis Complete.
+[2025-12-08T08:16:45.884Z] Starting Diagnosis (with Interaction)...
+[2025-12-08T08:16:46.479Z] 
+--- Testing: Two and a Half Men ---
+[2025-12-08T08:16:46.480Z] Navigating to: https://vidsrc-embed.ru/embed/tv/2691/1/1
+[2025-12-08T08:16:49.245Z] Page Title: Two and a Half Men (2003) S01E01
+[2025-12-08T08:16:49.246Z] Attempting to click Play button...
+[2025-12-08T08:16:49.312Z] Clicked center screen (blind)
+[2025-12-08T08:16:49.313Z] Waiting for network activity...
+[2025-12-08T08:16:59.062Z] 🎯 FOUND M3U8: https://tmstr5.thrumbleandjaxon.com/pl/H4sIAAAAAAAAAwXB0XaCIAAA0F8CNJt7GxPXKChRwHwT0DVCVqtzdH797gVpasc.2ZoUuCEZhyHL0j6BYw4hGuyYv2r_tfJrOLkyBEueWa2XczN1x87jjLe3dpjgtZIWVlBsqqQCxnNigxAOdV0dSianJ3LynByQ8LLAq1Hd3SAeVeM.h8gWO_GTKS6pVeXqgnvwUgDt6ZlF2tetY6J.mfnOzjUKbV_gHxXlUgGI96Cb5XuutA608YEI__bXFUKaKIJoS1UnbOknSBws7zaqK4801SRvLNnUauJEoMes4qWxEH8fFcZMBb9f6U1E9muQu9hSTVrTnkN8GEheCbn5YJrOVcMbl.C92VHgVpD_A3.nd_VBAQAA/master.m3u8 (200)
+[2025-12-08T08:16:59.242Z] 🎯 FOUND M3U8: https://tmstr5.thrumbleandjaxon.com/pl/H4sIAAAAAAAAAwXB0XaCIAAA0F8CNJt7GxPXKChRwHwT0DVCVqtzdH797gVpasc.2ZoUuCEZhyHL0j6BYw4hGuyYv2r_tfJrOLkyBEueWa2XczN1x87jjLe3dpjgtZIWVlBsqqQCxnNigxAOdV0dSianJ3LynByQ8LLAq1Hd3SAeVeM.h8gWO_GTKS6pVeXqgnvwUgDt6ZlF2tetY6J.mfnOzjUKbV_gHxXlUgGI96Cb5XuutA608YEI__bXFUKaKIJoS1UnbOknSBws7zaqK4801SRvLNnUauJEoMes4qWxEH8fFcZMBb9f6U1E9muQu9hSTVrTnkN8GEheCbn5YJrOVcMbl.C92VHgVpD_A3.nd_VBAQAA/7e39f90815d0cbca3fcb1178fb9fa803/index.m3u8 (200)
+[2025-12-08T08:17:04.316Z] 
+--- Testing: Lost in Space (2018) ---
+[2025-12-08T08:17:04.317Z] Navigating to: https://vidsrc-embed.ru/embed/tv/75758/1/1
+[2025-12-08T08:17:04.955Z] Page Title: Lost in Space (2018) (2018) S01E01
+[2025-12-08T08:17:04.956Z] Attempting to click Play button...
+[2025-12-08T08:17:05.035Z] Clicked center screen (blind)
+[2025-12-08T08:17:05.036Z] Waiting for network activity...
+[2025-12-08T08:17:10.814Z] 🎯 FOUND M3U8: https://tmstr3.thrumbleandjaxon.com/pl/H4sIAAAAAAAAAw3KyXKCMAAA0F.ChEV6BBIZLNGELJIbS6YIxEFLEfn6eni35wQHA73Abw30QQiiNuhAGNZh6B66g2ecL4X1b7vnWg_02aS5EnDmlBOPoI1XFq1dNheNXb6peD3le1nOZZR.XAmPvS4VkIliPQG0MowDAbGVjr.3kJX10Mdctr5RvSpGV0jUD1QtlULLVij0kiMBxm4jS3UvM.kTqF_NXZN69N7k_uMQlf_xZKkbrFcx6YkhgkwSwXPWIemyW2n1hWQScIhXcdyAGSfaunNgbI4pj32t5koMrCIW7TXHj5bHJzEUsFN.YnC1ESc6d.n0YDu.lUK_qcqTz9n4lUjiTo8CuBfKnegfBTAK70EBAAA-/master.m3u8 (200)
+[2025-12-08T08:17:10.999Z] 🎯 FOUND M3U8: https://tmstr3.thrumbleandjaxon.com/pl/H4sIAAAAAAAAAw3KyXKCMAAA0F.ChEV6BBIZLNGELJIbS6YIxEFLEfn6eni35wQHA73Abw30QQiiNuhAGNZh6B66g2ecL4X1b7vnWg_02aS5EnDmlBOPoI1XFq1dNheNXb6peD3le1nOZZR.XAmPvS4VkIliPQG0MowDAbGVjr.3kJX10Mdctr5RvSpGV0jUD1QtlULLVij0kiMBxm4jS3UvM.kTqF_NXZN69N7k_uMQlf_xZKkbrFcx6YkhgkwSwXPWIemyW2n1hWQScIhXcdyAGSfaunNgbI4pj32t5koMrCIW7TXHj5bHJzEUsFN.YnC1ESc6d.n0YDu.lUK_qcqTz9n4lUjiTo8CuBfKnegfBTAK70EBAAA-/7e39f90815d0cbca3fcb1178fb9fa803/index.m3u8 (200)
+[2025-12-08T08:17:20.050Z] 
+--- Testing: Tron: Ares ---
+[2025-12-08T08:17:20.051Z] Navigating to: https://vidsrc-embed.ru/embed/movie/533533
+[2025-12-08T08:17:20.626Z] Page Title: TRON: Ares (2025)
+[2025-12-08T08:17:20.628Z] Attempting to click Play button...
+[2025-12-08T08:17:20.656Z] Clicked center screen (blind)
+[2025-12-08T08:17:20.658Z] Waiting for network activity...
+[2025-12-08T08:17:21.507Z] 🎯 FOUND M3U8: https://tmstr2.thrumbleandjaxon.com/pl/H4sIAAAAAAAAAwXB7XqCIBgA0FsSv5r7aaHGEpOQV_mHYPEkWKutVle_c.Ip1UYZnSTTcYw_gnTM0GqaMqPT.Big1adB5KWAdqy3Z1oxor0J6Jw8oCQvjiyuMYMuxHHTEyUqKaAYHl2J9gD6pkOzdDP7VetsaVH.lut7NIn8KcCJMcoXKGwDm.Jb4lOk._rRVEKNi5WiJE.JddSAXQxnF.23zxausTqLmGI6i_LvXlcMhCh6WZDNF7L94K9vEySqC41SRYu4Iy_KqWNd8rOL8gq88G3oLoyLgyndRaGrVxvSD07su8gluwDdap7fDyDViO1.qhzjM8vluU2Gxc4HjFpT0lDxUwjepiN31ryD7B.rDV9rQQEAAA--/master.m3u8 (200)
+[2025-12-08T08:17:21.685Z] 🎯 FOUND M3U8: https://tmstr2.thrumbleandjaxon.com/pl/H4sIAAAAAAAAAwXB7XqCIBgA0FsSv5r7aaHGEpOQV_mHYPEkWKutVle_c.Ip1UYZnSTTcYw_gnTM0GqaMqPT.Big1adB5KWAdqy3Z1oxor0J6Jw8oCQvjiyuMYMuxHHTEyUqKaAYHl2J9gD6pkOzdDP7VetsaVH.lut7NIn8KcCJMcoXKGwDm.Jb4lOk._rRVEKNi5WiJE.JddSAXQxnF.23zxausTqLmGI6i_LvXlcMhCh6WZDNF7L94K9vEySqC41SRYu4Iy_KqWNd8rOL8gq88G3oLoyLgyndRaGrVxvSD07su8gluwDdap7fDyDViO1.qhzjM8vluU2Gxc4HjFpT0lDxUwjepiN31ryD7B.rDV9rQQEAAA--/0f9b738af906eb91d8f5b3fab14e78cc/index.m3u8 (200)
+[2025-12-08T08:17:35.662Z] 
+--- Testing: Bugonia ---
+[2025-12-08T08:17:35.663Z] Navigating to: https://vidsrc-embed.ru/embed/movie/701387
+[2025-12-08T08:17:36.196Z] Page Title: Bugonia (2025)
+[2025-12-08T08:17:36.197Z] Attempting to click Play button...
+[2025-12-08T08:17:36.255Z] Clicked center screen (blind)
+[2025-12-08T08:17:36.256Z] Waiting for network activity...
+[2025-12-08T08:17:37.319Z] 🎯 FOUND M3U8: https://tmstr4.thrumbleandjaxon.com/pl/H4sIAAAAAAAAAxXPy46CMBSA4VfiJursZGJrSOxMC6dAd7SHEUEQL5HSpx_d_asv.RH_NrHG7cbHNa5Q4yeaeB1HuqlXcfjVdCbU.ck2RD7QsYSPuxkIt5XDCejmDgVJlEd8JOkFXMuFzwNFry82VH6Rs5fqUoDssZhSSbZsy1xOHCg45cuwKhPBensDz0od7mbTVTbLk7mgEPJStDhEi_beLoVZHljEO.xRtqUYp1iP8rcBvPHgGtVe6gw9LTywuekt0fu2On4_52wggB13Soqz6n3gRZpVnXGMypsBGx.H0yuj6VwF7JyV0wRvu.6VE0QcIJT7IsdJSPKjyjY6jq2t3WVszs9Shub.eUPnbf8BXsyTskEBAAA-/master.m3u8 (200)
+[2025-12-08T08:17:37.499Z] 🎯 FOUND M3U8: https://tmstr4.thrumbleandjaxon.com/pl/H4sIAAAAAAAAAxXPy46CMBSA4VfiJursZGJrSOxMC6dAd7SHEUEQL5HSpx_d_asv.RH_NrHG7cbHNa5Q4yeaeB1HuqlXcfjVdCbU.ck2RD7QsYSPuxkIt5XDCejmDgVJlEd8JOkFXMuFzwNFry82VH6Rs5fqUoDssZhSSbZsy1xOHCg45cuwKhPBensDz0od7mbTVTbLk7mgEPJStDhEi_beLoVZHljEO.xRtqUYp1iP8rcBvPHgGtVe6gw9LTywuekt0fu2On4_52wggB13Soqz6n3gRZpVnXGMypsBGx.H0yuj6VwF7JyV0wRvu.6VE0QcIJT7IsdJSPKjyjY6jq2t3WVszs9Shub.eUPnbf8BXsyTskEBAAA-/26fb49a349eded2679c5c62035131c94/index.m3u8 (200)
+[2025-12-08T08:17:51.659Z] Diagnosis Complete.

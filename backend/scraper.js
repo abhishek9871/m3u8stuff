@@ -83,16 +83,28 @@ app.get('/api/extract', async (req, res) => {
     // Set up extraction listener for this request
     const responseHandler = (response) => {
         const url = response.url();
-        if ((url.includes('.m3u8') || url.includes('.mp4')) && !url.includes('sk-') && !foundMedia) {
-            console.log(`[Target] 🎯 Found Media: ${url}`);
-            foundMedia = url;
-            // Capture the referer from the request that triggered this response
-            try {
-                const request = response.request();
-                capturedReferer = request.headers()['referer'] || page.url();
-                console.log(`[Target] 📎 Captured Referer: ${capturedReferer}`);
-            } catch (e) {
-                capturedReferer = page.url();
+        if ((url.includes('.m3u8') || url.includes('.mp4')) && !url.includes('sk-')) {
+            // Prioritize master.m3u8 (Multi-quality playlist)
+            // If we already found a master playlist, ignore others.
+            // If we haven't found anything, take this.
+            // If we have a non-master, and this IS a master, take this (upgrade).
+
+            const isMaster = url.includes('master.m3u8');
+            const hasExisting = !!foundMedia;
+            const existingIsMaster = hasExisting && foundMedia.includes('master.m3u8');
+
+            if (!hasExisting || (isMaster && !existingIsMaster)) {
+                console.log(`[Target] 🎯 Found Media (Upgrade: ${isMaster}): ${url}`);
+                foundMedia = url;
+
+                // Capture the referer from the request that triggered this response
+                try {
+                    const request = response.request();
+                    capturedReferer = request.headers()['referer'] || page.url();
+                    console.log(`[Target] 📎 Captured Referer: ${capturedReferer}`);
+                } catch (e) {
+                    capturedReferer = page.url();
+                }
             }
         }
     };
@@ -111,9 +123,27 @@ app.get('/api/extract', async (req, res) => {
             // Interaction: Check/solve Cloudflare or Click Play
             await handlePageInteraction(page, provider.name);
 
-            // Wait for media
+            // Wait up to 45 seconds for M3U8 (Increased from 15s)
             let attempts = 0;
-            while (!foundMedia && attempts < 15) {
+            const MAX_ATTEMPTS = 45;
+
+            // Smart Selection: Wait a bit after finding FIRST media to see if BETTER media (master.m3u8) arrives
+            while (attempts < MAX_ATTEMPTS) {
+                if (foundMedia) {
+                    // If we found the Gold Standard (master.m3u8), stop immediately
+                    if (foundMedia.includes('master.m3u8')) break;
+
+                    // If we have non-master media, wait up to 3 more seconds to see if master appears
+                    // This prevents grabbing a low-quality index.m3u8 that might load first
+                    let buffer = 0;
+                    while (buffer < 3 && !foundMedia.includes('master.m3u8') && attempts < MAX_ATTEMPTS) {
+                        await new Promise(r => setTimeout(r, 1000));
+                        buffer++;
+                        attempts++;
+                    }
+                    break; // Done waiting
+                }
+
                 await new Promise(r => setTimeout(r, 1000));
                 attempts++;
             }
@@ -122,7 +152,7 @@ app.get('/api/extract', async (req, res) => {
                 usedProvider = provider.name;
                 break;
             } else {
-                console.log(`[Extract] ❌ No media found on ${provider.name}, trying next...`);
+                console.log(`[Extract] ❌ No media found on ${provider.name} after ${attempts}s, trying next...`);
             }
         } catch (e) {
             console.log(`[Extract] ⚠️ Error on ${provider.name}: ${e.message}`);
@@ -236,7 +266,7 @@ app.get('/api/proxy/m3u8', async (req, res) => {
         const lines = content.split('\n');
         const rewrittenLines = lines.map(line => {
             const trimmed = line.trim();
-            
+
             // Skip empty lines, comments, and tags (except URI= attributes)
             if (!trimmed || trimmed.startsWith('#')) {
                 // Handle #EXT-X-KEY and #EXT-X-MAP with URI attributes
