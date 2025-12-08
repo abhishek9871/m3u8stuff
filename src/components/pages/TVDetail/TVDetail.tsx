@@ -9,7 +9,7 @@ import { useWatchedEpisodes } from '../../../context/WatchedEpisodesContext';
 import { streamExtractor } from '../../../services/streamExtractor';
 import Loader from '../../common/Loader';
 import ContentCarousel from '../Home/ContentCarousel';
-import { NativePlayer } from '../../common/NativePlayer';
+import MoviePlayer from '../../common/MoviePlayer';
 import { FaPlay, FaPlus, FaCheck, FaStar, FaTimes, FaCheckCircle, FaChevronDown, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 const TVDetail: React.FC = () => {
@@ -203,38 +203,40 @@ const TVDetail: React.FC = () => {
               </div>
             )}
 
-            {/* NativePlayer when stream is extracted */}
+            {/* MoviePlayer when stream is extracted */}
             {extractedStream && !useFallbackIframe && (
               <div className="absolute inset-0">
-                <NativePlayer
+                <MoviePlayer
                   extracted={extractedStream}
                   title={`${show.name} - S${currentEpisode.season}E${currentEpisode.episode}`}
                   poster={show.backdrop_path ? `${TMDB_IMAGE_BASE_URL}/w780${show.backdrop_path}` : undefined}
                   autoplay={true}
+                  onClose={handleClosePlayer}
                 />
               </div>
             )}
 
             {/* Fallback iframe when extraction fails */}
             {useFallbackIframe && !extracting && (
-              <iframe
-                src={streamUrl}
-                className="absolute inset-0 w-full h-full"
-                title={show.name}
-                frameBorder="0"
-                allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-                allowFullScreen
-                referrerPolicy="origin"
-              />
+              <>
+                <iframe
+                  src={streamUrl}
+                  className="absolute inset-0 w-full h-full"
+                  title={show.name}
+                  frameBorder="0"
+                  allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                  allowFullScreen
+                  referrerPolicy="origin"
+                />
+                {/* Close button overlay - only needed for iframe fallback */}
+                <button
+                  onClick={handleClosePlayer}
+                  className="absolute top-4 left-4 z-30 p-3 rounded-full bg-black/70 hover:bg-black/90 text-white transition-colors backdrop-blur-sm"
+                >
+                  <FaTimes size={18} />
+                </button>
+              </>
             )}
-
-            {/* Close button overlay */}
-            <button
-              onClick={handleClosePlayer}
-              className="absolute top-4 left-4 z-30 p-3 rounded-full bg-black/70 hover:bg-black/90 text-white transition-colors backdrop-blur-sm"
-            >
-              <FaTimes size={18} />
-            </button>
           </>
         ) : (
           <>
