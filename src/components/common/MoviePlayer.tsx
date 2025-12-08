@@ -846,7 +846,7 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
 
             {/* Next Episode Overlay */}
             {nextEpisode && (
-                <div className={`absolute bottom-20 right-4 md:bottom-24 md:right-8 z-50 transition-all duration-500 transform ${nextEpisodeCountdown !== null ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
+                <div className={`absolute bottom-20 left-1/2 md:left-auto md:bottom-24 md:right-8 z-50 transition-all duration-500 transform ${nextEpisodeCountdown !== null ? 'opacity-100 -translate-x-1/2 translate-y-0 md:translate-x-0' : 'opacity-0 -translate-x-1/2 translate-y-10 md:translate-x-0 pointer-events-none'}`}>
                     <div className="bg-black/80 backdrop-blur-md border border-white/10 rounded-lg p-4 shadow-2xl max-w-[280px]">
                         <p className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-1">Up Next in {nextEpisodeCountdown}</p>
                         <h4 className="text-white font-bold text-sm md:text-base line-clamp-1 mb-3">{nextEpisode.title}</h4>
