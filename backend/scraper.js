@@ -155,15 +155,23 @@ app.get('/api/extract', async (req, res) => {
     // 🧠 REVERSE ENGINEERED API EXTRACTOR
     const extractSubtitlesViaAPI = async (page, reqSeason, reqEpisode) => {
         try {
-            const cloudFrame = page.frames().find(f => f.url().includes('cloudnestra') || f.url().includes('hash='));
-            if (!cloudFrame) return [];
+            // Find the player frame - prefer prorcp (player) over rcp frames
+            // prorcp frame has correct data-i, data-s, data-e attributes
+            let playerFrame = page.frames().find(f => f.url().includes('prorcp'));
+            if (!playerFrame) {
+                playerFrame = page.frames().find(f => f.url().includes('cloudnestra') || f.url().includes('hash='));
+            }
+            if (!playerFrame) return [];
 
             // Pass season/episode into the browser context
-            return await cloudFrame.evaluate(async (s, e) => {
+            return await playerFrame.evaluate(async (s, e) => {
                 const found = [];
                 try {
-                    const id = document.body.getAttribute('data-i');
+                    let id = document.body.getAttribute('data-i');
                     if (!id) return [];
+
+                    // Clean IMDB ID - remove any suffix like "_1x1"
+                    id = id.split('_')[0];
 
                     // Use passed season/episode if available, otherwise try data attributes
                     const season = s || document.body.getAttribute('data-s');

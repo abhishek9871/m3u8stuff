@@ -1,0 +1,20 @@
+{
+  "subData": {
+    "the_subtitles": "[\"[]\"]",
+    "db_subs": "[]",
+    "sub_langs": "[{\"IdSubLanguage\":\"afr\",\"ISO639\":\"af\",\"LanguageName\":\"Afrikaans\",\"UploadEnabled\":\"1\",\"WebEnabled\":\"0\"},{\"IdSubLanguage\":\"alb\",\"ISO639\":\"sq\",\"LanguageName\":\"Albanian\",\"UploadEnabled\":\"1\",\"WebEnabled\":\"1\"},{\"IdSubLanguage\":\"ara\",\"ISO639\":\"ar\",\"LanguageName\":\"Arabic\",\"UploadEnabled\":\"1\",\"WebEnabled\":\"1\"},{\"IdSubLanguage\":\"arg\",\"ISO639\":\"an\",\"LanguageName\":\"Aragonese\",\"UploadEnabled\":\"1\",\"WebEnabled\":\"1\"},{\"IdSubLanguage\":\"arm\",\"ISO639\":\"hy\",\"LanguageName\":\"Armenian\",\"UploadEnabled\":\"1\",\"WebEnabled\"",
+    "pljs_sub_lang": null,
+    "current_sub": null,
+    "default_subtitles": "\"[]\"",
+    "pljssglobal_subs": null,
+    "getSubtitle_available": true
+  },
+  "ccClicked": {
+    "clicked": true,
+    "selector": "[class*=\"subtitle\"]"
+  },
+  "subDataAfter": {
+    "the_subtitles": "[\"[]\"]",
+    "db_subs": "[]"
+  }
+}

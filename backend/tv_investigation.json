@@ -1,0 +1,142 @@
+{
+  "frames": [
+    {
+      "index": 0,
+      "url": "https://vidsrc-embed.ru/embed/tv?tmdb=66732&season=1&episode=1",
+      "bodyAttrs": {
+        "data-i": "4574334",
+        "data-s": "1",
+        "data-e": "1"
+      },
+      "playerObjects": [],
+      "subtitleSources": [],
+      "trackElements": [],
+      "globalVars": [
+        "onsubmit",
+        "current_sub_data",
+        "current_sub_data_tmp",
+        "sub_hash",
+        "current_sub_name"
+      ]
+    },
+    {
+      "index": 1,
+      "url": "https://cloudnestra.com/rcp/NTNhNGRlM2FlZmFjYzM4YWRkYzdkOTIwMmQ4Mzg4ZTY6TVd4VE0yUlNWMjFYTWtweGJrVnZjME0xYm10U1dWcHdiMUpQWjFGSVpUQmtjVXh4SzJaS2R5dE9OR2xPVlhWVEsxWjBlVVJsUVd0VVJ6Sm5UVkp0V1Rnd00yVTJRVkJuWkdrM0wzTnhSSGhzZVVzNWRHMUZaamcwVjIxNVRHcHFVRWRSYjA1aFVscHlVV1pOY3pCVWMxRXZZM2R5TlZadUwzVTBkblIzV0ZGamNHTkNTREp3ZVRCdmJISk1TM0UwY2pSUk0wVTBaRWR1WWxRelVUSkVNeTlZV2xoemNWaGlhbmd6UkRkTWQwUjVibXhxVlRodmJVYzFNaXRWZDBoS1ZWVlRPV0pvYTBscmNtczNPRUUyT0V4WksxaHBVRWc0YzFscllqRmpVM1p6WVVSMU5qbEdVbWxPY21NMVNrRnZNMDFsVmtFNU5Fc3JhazFXYnpjeFZFZHVabGxxWTNWaFRVdEJRMDlOT0cxclpGcEdUVzlPV2xCMGIzcFlTbVZwUkM5TldYRjFMME55UkU1clVtcGpibmQzVDFOalJUQndTRTFQV21OV2JrZFpaRTV6ZEN0aE1ERlZhblkyYjNGbldVNUxUMUYxT0ZKdGMyaFFTRGRFUTNOelZIZEJORmxyYzNsblVsWkxhMHBJVGxScWFFVm1hVUV2UmtOQ1VUaEdlVWRoV1RSclZHRjVaMmxHWTAxWlNUVlRja2RJUWtZelRFMWFiamgzVWtObVVrcDBaekprVmxwa2NEQlhjR3h1UmtvMGMyTXdTRkZOWVZWM1YzTk5SbFJPWTA4NVJrVmlTazE0V21sUVRubHliRTVNZEZOYVZVSlZWRUpLT0ZWaGFTdEhjaTlKV0ZkU1dHOUhjV2RDYUdGMFdIbFNPSE5wVm1aaFIxQjBTWEZ0V1hSbmRESm9jek4zWlRsWVpuWnhUV04zS3pKVllXTjFRMkZPVjNwMmFFNHhNamxMY2xGRWMyUlljWEl4Tmpsd1ZVaFBUMjlDZEZoeFlqSm5XQzh5SzBRMVNreHBPRVJRYTIxa2FFbHFlRFpSVlZodksyWlFObkZsWlVkMFVEZHlXVWxqTVM4NGQyWlJPUzloUVVseGNXSnZWVXRwZG5CRGFFdE1hRGRTYm1oT1NYSndLMG8wUW1SSGFsazNiRWRXWjI1Q1lVVXdkR0pqZWpGWFRXSkhUek5tUm5oMVFVUldjMjlVTkUxWmVIVk9OMEZLVG1WUWJVRnNaM3BvWWxsb1pIRmtNMFptTlhnMFEyMUJOSGRHVUhKWVlsZFZaVmRRTld4aWRqTlZOV1Z6T0VkYWIyTTVXbFE1V1dkQ1psSjZNbmxHUzFCSlVFY3ZNRXhYVVRFck1tTm9OM1IzVm1wd2FYRXpjSEVyV2tobE9DdHBNams0Ykd4UFVFTmxVV1JCV2xSNFVWQjFRWFZNVldaM2NrY3dVRGRRT0VJclExUkphMFl4WWxGMloxZERRV1o0TDNGU09VVjNiVXBqWm5VMVRubGhWM0pxWWl0ellWVjJSbkI1V0hGR2FtbEtVRzlsVDIwelVERTFWbkpSYUV0aFUzSm5aV2xHUzJSTmF6ZERVbWRKTnpaVlRUVkhTMGxJWVU5U1JWRnpSMGhTWTB0a2NrMUxPVTFVWmpOdk1ITXhjbTltUjFSdWVFcHNVVWRSY3pOUlkxbFRibU5tYWpBeE1qUlVWMXBhWVVKTmNGb3ZlRXRuVFZrM2JVdFVUa0ZrZGpoSGVXSXZTa0puVFRoS1EzaERTa1pWVVdOcFF6SkhjREp4UlZobE5rMUthRTEzTVdsVVQwaFlVR1JvTjFWSmNFcFFNV1prVGtOQlEwTkVWelpYVUU5WGFUbFdablpHSzFWMkwxRk1TVWR6VW0wclpVbGxkVTlCTkhObFYwZG9UM0ZaUzJSc1R6Z3hhM2xXVG5GSk1rYzRZa3A2V1VKa09HOWtkMk5PU2xwRGIzWTVjM05qZDJaTmIxSXdhbEV4T0hKSVNEVjVPRUZSWjJ0Wk9UbHRZVU0yWjJ4eU5HNUdZbTV4ZWt0d2FGZ3hNbGRpWkhsUVFXNVlTemgzU201YWR6MDk-",
+      "bodyAttrs": {
+        "data-i": "4574334_1x1"
+      },
+      "playerObjects": [],
+      "subtitleSources": [],
+      "trackElements": [],
+      "globalVars": [
+        "onsubmit"
+      ]
+    },
+    {
+      "index": 2,
+      "url": "about:blank",
+      "bodyAttrs": {},
+      "playerObjects": [],
+      "subtitleSources": [],
+      "trackElements": [],
+      "globalVars": [
+        "onsubmit"
+      ]
+    },
+    {
+      "index": 3,
+      "url": "https://cloudnestra.com/prorcp/YThmZGVkMzY0NzAxNTQ3MjMyMTkyMzUzMGRlYTQ1ZTE6YWxFNGFqaERWREJwVkhoeU1qSk5SMDh4YTFnNE9XOTVVbmxKVDFRMVdYVkxZVWxRY1dSdE5YZHFWRzFFTmtOUVRGZEdPWGh1TjJWdFRsWk5OMDhyUkhOWlZqWlVSRFJWWVRWWkwyWTRSMU5XYm1kM2JITjNVa05CTkhKSmIxVlRWVWhrU0hnd1FqQk1lbGx2ZG5KbFpGcENlamt2UTI4eGFWUjZUVk5xY1RaM2VURlpVazlSZG5WTEsxVktjMVY1TUM5bFUxVlVRbTFGWVd4SlZraElWblJpTUZSa09WRk9lbGsyV25WQlJFUmxOekF5VkdJd2EwRnhXRzkxTm5relkzaEtaRmx2WjNRelRFRkdiMEZPZFZKMVkybDBPWEZZU0VWdE4yZ3lVMFpZWWpseE16bEtlRXBDTTJSMVZrSkhha1JsVWpWT01rUnNhM1IxUTJWWU5qWklNSEphWm1neVducGhRVkU1ZGtGMVYzRXhPVlZhWTNORGFUbDNWRXB2YVVoNlNIUTJla05sWkdaeGJUVndkM1p0UVZsM1FXaGtaMVkzU21oalNUSlNkRXR0V1hnMFJtcE5WbmxFYW1OWFVFVnRaM2hUZG1zek4yWjVZV0YyVkhoeVkySlBiVEZ0YTJsc01IZGhSa2xZVTJKVllUbEpSbkZqTkdGYWVVWnZXVkZXYkhjNVZsSllMMGRwTldoUWNVTndjV3BpUkZwNlJDdGhRVFJuZW5odUwzSmtiM2d6UzNaUWJYUTNNVzFWU1ZwNVRHWlBRMlpMU1ZaMU4zazBUR1ZZWWpSd1psQlNlQ3RST0hNd1JuVndNVUZ5ZURGb1REQnNZa1kxV21WUFRsaGphamxrYlZGbFdGZFVibFZSU3pNclZUUlZhVzVUT0haQlRucHdTV0Z6Y0hkcVlqVnJNMkpGTmxrck5UbGpUR0pNWTFCdk1WRlFhRGRUY1dsdFUydFVNRGxxWnpKTFMwUnJkMnREY21sNmRHbE1SMFF3TmpkWldYWjBWVGMzV2lzelRVZEllV2x4YTB4dU1UWmhVR1JwU0VKMGJsSjFjbmhsWkZwblpFcElNMmxxY1hGdGExbE5NbUkzVUdJdlpURXZNbTAxTHpBNFp6bElibHBLVGpSUmFIUXlXVmRXWTFaUU5uRmhNakZpUzBneFpUSTBZVlZzVDJWdmMxaFViSGRJUTFkdFl6QlRNV0k0WjBkMFZHaHJLMHhGT1U1aVNXdHJabmQ0WjJwT1ZFOHJZVWhRVGs1QmNVWkpXUzkxV0VSdGNrTkhWMlJaYkRnM1UyWmlZVFJOTVc1a1dWaEthVWszTjFkRVl6UXpjRmhDVVRad01IbFhja2x0YzJGSU1XTjRXR2R2ZEVKb09HOXJlbWt3T0hvcmNERldaRmQzUlcxT05raDRXSEJ5Y25Fdk1tb3lhakZYZVU1MGRsSTVibXRHY25WblJHcFFWMU5OYjNCNWMzcENNV3hzV1VnelltbDZNWFptV1RGcFFrNHhRbGg1YW1WU2NXaHJSbXR4YmxSM05rVmlObWxqUzFwVWVrOU9NRmdyUXpaUlVVY3JWbWRsTDNJelFVeGtNMHh5YVdkQllXSXdabWt5UlVSVFZIWmlhbmhrYlRoRVNHaEVaMkpSUWtGMU5tNHlXRnB2VjFGVVJGSkxNMVJXT1N0RVpTOVNXSG9yTnpsVlpURkJhMGxvZG14a09VZFdWVkpPYVdGeFIzRlZjR3BDSzB4cFRqVm5OSGN5Y0RSNWEzVTJRVzl4UXpRd01sRmFUa3Q2YTNKdVRXTmxZMUpzVlRKd1QwYzVRVFp5ZWl0alJWTmFlRWRxV1VOb09FWlpXamcwVW1oeWVFZEZSamRCWm5RdlZ6WlRUbTlDUkUxMmVqQkVRMlUxUmxOMFRHNVVSVVZoVGtob09ERkdhVkpITkZKSlpXZHNPR3A1TkZka1pVZFRlWE5UYkVSTlozTk9jVmMwVUM5dFMyOWlaVXRVTVc1MldGUlRORU53UVhKQksxb3lXRE5aT1RoTllteHZOM1Y0WTFWM1ZWWk5ORmRhV1hGTlpsVmtOR3hRTVVoV1p6MDk-",
+      "bodyAttrs": {
+        "data-i": "4574334",
+        "data-s": "1",
+        "data-e": "1"
+      },
+      "playerObjects": [
+        "pljssglobal",
+        "Playerjs",
+        "player"
+      ],
+      "subtitleSources": [
+        {
+          "source": "pljssglobal",
+          "subs": "[{}]"
+        }
+      ],
+      "trackElements": [],
+      "globalVars": [
+        "onsubmit",
+        "showSubtitles",
+        "addSubtitle",
+        "sub_langs",
+        "show_subs",
+        "hide_subs",
+        "get_sub_lang",
+        "showOpsSubs",
+        "matchSubtitle",
+        "getSubtitle",
+        "gen_sub_string",
+        "gen_subs_el",
+        "setStartSubtitle",
+        "subs_error",
+        "sub_shown_lang",
+        "pljs_sub_lang",
+        "subs_shown",
+        "the_subtitles",
+        "default_subtitles",
+        "db_subs",
+        "current_sub_name",
+        "current_sub"
+      ]
+    },
+    {
+      "index": 4,
+      "url": "about:blank",
+      "bodyAttrs": {},
+      "playerObjects": [],
+      "subtitleSources": [],
+      "trackElements": [],
+      "globalVars": [
+        "onsubmit"
+      ]
+    },
+    {
+      "index": 5,
+      "url": "https://t.dtscout.com/idg/?su=51A0176520273579905BDE10B78C6FBD",
+      "bodyAttrs": {},
+      "playerObjects": [],
+      "subtitleSources": [],
+      "trackElements": [],
+      "globalVars": [
+        "onsubmit"
+      ]
+    },
+    {
+      "index": 6,
+      "url": "https://tags.crwdcntrl.net/lt/shared/2/lt.iframe.html?c=3825",
+      "bodyAttrs": {},
+      "playerObjects": [],
+      "subtitleSources": [],
+      "trackElements": [],
+      "globalVars": [
+        "onsubmit"
+      ]
+    },
+    {
+      "index": 7,
+      "url": "https://bcp.crwdcntrl.net/pixels?src=LTJS&s=7%2C148%2C49%2C136%2C135%2C168%2C94%2C81%2C33%2C31%2C122%2C121%2C26%2C164%2C116%2C61%2C154%2C106%2C104%2C54%2C100%2C2%2C22&lac=true&c=3825&ch=%7B%22brands%22%3A%5B%7B%22brand%22%3A%22Google%20Chrome%22%2C%22version%22%3A%22143%22%7D%2C%7B%22brand%22%3A%22Chromium%22%2C%22version%22%3A%22143%22%7D%2C%7B%22brand%22%3A%22Not%20A(Brand%22%2C%22version%22%3A%2224%22%7D%5D%2C%22fullVersionList%22%3A%5B%7B%22brand%22%3A%22Google%20Chrome%22%2C%22version%22%3A%22143.0.7499.40%22%7D%2C%7B%22brand%22%3A%22Chromium%22%2C%22version%22%3A%22143.0.7499.40%22%7D%2C%7B%22brand%22%3A%22Not%20A(Brand%22%2C%22version%22%3A%2224.0.0.0%22%7D%5D%2C%22mobile%22%3Afalse%2C%22model%22%3A%22%22%2C%22platform%22%3A%22Windows%22%2C%22platformVersion%22%3A%2219.0.0%22%7D",
+      "bodyAttrs": {},
+      "playerObjects": [],
+      "subtitleSources": [],
+      "trackElements": [],
+      "globalVars": [
+        "onsubmit"
+      ]
+    }
+  ],
+  "networkSubs": [
+    {
+      "url": "https://cloudnestra.com/subtitles_pjs_24.04.js?t=1744906949",
+      "status": 200
+    }
+  ]
+}

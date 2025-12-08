@@ -1,0 +1,25 @@
+{
+  "capturedRequests": [
+    {
+      "type": "request",
+      "method": "GET",
+      "url": "https://cloudnestra.com/subtitles_pjs_24.04.js?t=1744906949",
+      "headers": {
+        "sec-ch-ua-platform": "\"Windows\"",
+        "referer": "https://cloudnestra.com/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+        "sec-ch-ua": "\"Google Chrome\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"",
+        "sec-ch-ua-mobile": "?0",
+        "accept": "*/*"
+      }
+    }
+  ],
+  "selectResult": {
+    "error": "sub_el.data is not a function"
+  },
+  "finalSubs": {
+    "the_subtitles": "[\"[]\"]",
+    "db_subs": "[]",
+    "tracks": []
+  }
+}
