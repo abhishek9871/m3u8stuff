@@ -25,6 +25,7 @@
 14. [Environment Variables](#14-environment-variables)
 15. [Local Development](#15-local-development)
 16. [Design System](#16-design-system)
+17. [MoviePlayer Component - Desktop & Mobile Adaptations](#17-movieplayer-component---desktop--mobile-adaptations)
 
 ---
 
@@ -1355,6 +1356,7 @@ curl "https://abhishek1996-flixnest-scraper.hf.space/api/extract?tmdbId=701387&t
 
 | Date | Version | Changes |
 |------|---------|---------|
+| Dec 8, 2025 | 4.0 | MoviePlayer Desktop & Mobile Adaptations: Auto-hide controls, keyboard shortcuts, volume slider fix, touch gestures (volume, brightness, seek, zoom), pinch-to-zoom, responsive UI, menu gesture blocking |
 | Dec 8, 2025 | 3.0 | Complete Subtitle System: OpenSubtitles API integration, TV series support, gzip decompression, SRT→VTT conversion, data URL embedding, label-based track selection |
 | Dec 8, 2025 | 2.0 | Complete rewrite with working production solution, HTTPS fix, referer handling |
 | Dec 6, 2025 | 1.0 | Initial documentation |
@@ -1383,3 +1385,295 @@ curl "https://abhishek1996-flixnest-scraper.hf.space/api/extract?tmdbId=701387&t
 > # TV test (Stranger Things S1E1)
 > curl "http://localhost:7860/api/extract?tmdbId=66732&type=tv&season=1&episode=1"
 > ```
+
+---
+
+## 17. MoviePlayer Component - Desktop & Mobile Adaptations
+
+> **Last Updated:** December 8, 2025  
+> **Status:** ✅ FULLY IMPLEMENTED  
+> **File Location:** `src/components/common/MoviePlayer.tsx`
+
+### 17.1 Overview
+
+The `MoviePlayer.tsx` component is the core video player for FlixNest. It has been extensively enhanced to provide a premium viewing experience on both desktop and mobile devices. This section documents ALL the changes made for future AI agents who need to continue development.
+
+### 17.2 Desktop Enhancements
+
+#### 17.2.1 Control Visibility System
+
+**What:** Controls auto-hide after 3 seconds of inactivity during playback.
+
+**Implementation:**
+```typescript
+// State
+const [showControls, setShowControls] = useState(true);
+const hideControlsTimeoutRef = useRef<number | null>(null);
+const HIDE_CONTROLS_DELAY = 3000;
+
+// Timer Reset Function
+const resetHideControlsTimer = useCallback(() => {
+    setShowControls(true);
+    if (hideControlsTimeoutRef.current) {
+        window.clearTimeout(hideControlsTimeoutRef.current);
+    }
+    // Only hide if playing AND no menus open
+    if (isPlaying && !showSubtitleMenu && !showQualityMenu) {
+        hideControlsTimeoutRef.current = window.setTimeout(() => {
+            setShowControls(false);
+        }, HIDE_CONTROLS_DELAY);
+    }
+}, [isPlaying, showSubtitleMenu, showQualityMenu]);
+
+// Mouse move shows controls
+onMouseMove={handleMouseMove}
+```
+
+**Key Points:**
+- Controls stay visible when paused
+- Controls stay visible when CC or Quality menu is open
+- Cursor hides when controls are hidden
+
+#### 17.2.2 Volume Slider Fix
+
+**Problem:** Volume slider wasn't tracking cursor during drag.
+
+**Fix:** Implemented proper drag handling with global mouse events:
+```typescript
+const handleVolumeMouseDown = (e: React.MouseEvent) => {
+    setIsVolumeScrubbing(true);
+    updateVolume(e);
+};
+
+useEffect(() => {
+    if (isVolumeScrubbing) {
+        window.addEventListener('mousemove', handleVolumeMouseMove);
+        window.addEventListener('mouseup', handleVolumeMouseUp);
+    }
+    return () => { /* cleanup */ };
+}, [isVolumeScrubbing]);
+```
+
+#### 17.2.3 Keyboard Controls
+
+| Key | Action |
+|-----|--------|
+| `Space` / `K` | Play/Pause |
+| `←` | Seek -10 seconds |
+| `→` | Seek +10 seconds |
+| `↑` | Volume +10% |
+| `↓` | Volume -10% |
+| `M` | Toggle Mute |
+| `F` | Toggle Fullscreen |
+| `Escape` | Exit Fullscreen/Close Player |
+
+#### 17.2.4 Subtitle Menu Redesign
+
+- Width: `w-80` (320px)
+- Unselected items: White text
+- Selected items: Green text (`text-green-400`)
+- Labels: `whitespace-normal break-words` for full visibility
+
+### 17.3 Mobile Adaptations
+
+#### 17.3.1 Touch Gesture System
+
+**File Location:** Lines 175-296 in `MoviePlayer.tsx`
+
+##### Volume Control (Right Half)
+- **Gesture:** Swipe up/down on RIGHT half of screen
+- **Sensitivity:** 200px for full 0-100% range
+- **Visual Indicator:** Volume bar + percentage on right side
+
+##### Brightness Control (Left Half)
+- **Gesture:** Swipe up/down on LEFT half of screen
+- **Range:** 20% to 200% (CSS filter)
+- **Implementation:** `style={{ filter: \`brightness(${brightness})\` }}`
+- **Visual Indicator:** Brightness bar + percentage on left side
+
+##### Seek Control (Double Tap)
+- **Gesture:** Double-tap (within 300ms) on left/right half
+- **Action:** Seek ±10 seconds
+- **Detection:** `lastTapRef` tracks previous tap time and position
+
+##### Zoom to Fill (Pinch Gesture)
+- **Gesture:** Pinch in/out with two fingers
+- **Implementation:** Toggle between `object-contain` and `object-cover`
+- **State:** `isZoomToFill` boolean
+- **Button:** Zoom button visible only on mobile (md:hidden)
+
+**Touch Handler Implementation:**
+```typescript
+const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    // Detect pinch (2 fingers)
+    if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        initialPinchDistanceRef.current = Math.sqrt(dx * dx + dy * dy);
+        return;
+    }
+    // Single touch - record start position
+    touchStartRef.current = {
+        x: touch.clientX,
+        y: touch.clientY,
+        time: Date.now(),
+        initialVolume: volume,
+        initialBrightness: brightness
+    };
+}, [volume, brightness]);
+```
+
+#### 17.3.2 Single Tap Behavior
+
+**Critical UX Decision:** Single tap ONLY shows controls, does NOT toggle play/pause.
+
+**Rationale:** Users expect first tap to reveal controls, not pause the video. Play/pause is handled via double-tap or control buttons.
+
+```typescript
+if (touchDuration < 300 && deltaX < 20 && deltaY < 20) {
+    lastTapRef.current = { time: now, x: touch.clientX };
+    resetHideControlsTimer(); // Only show controls, don't toggle play
+}
+```
+
+#### 17.3.3 Mobile Control Visibility
+
+| Element | Mobile | Desktop |
+|---------|--------|---------|
+| Play/Pause Button | Hidden | Visible |
+| Seek ±10s Buttons | Hidden | Visible |
+| Volume Button/Slider | Hidden | Visible |
+| Time Display | Visible (smaller) | Visible |
+| CC Button | Visible | Visible |
+| Quality Button | Visible | Visible |
+| Zoom Button | Visible | Hidden |
+| Fullscreen Button | Visible | Visible |
+
+**CSS Classes Used:**
+```tsx
+// Hide on mobile, show on desktop
+className="hidden md:flex"
+
+// Show on mobile, hide on desktop
+className="md:hidden"
+```
+
+#### 17.3.4 Menu Touch Event Handling
+
+**Problem:** Scrolling in CC/Quality menus triggered volume/brightness gestures.
+
+**Fix:** Stop touch event propagation on menus:
+```tsx
+<div 
+    className="absolute bottom-12 right-0 w-64 md:w-80 ..."
+    onTouchStart={(e) => e.stopPropagation()}
+    onTouchMove={(e) => e.stopPropagation()}
+>
+```
+
+Also, gestures are disabled when menus are open:
+```typescript
+if (showSubtitleMenu || showQualityMenu) return;
+```
+
+#### 17.3.5 Close Button Styling
+
+**Mobile:** `w-8 h-8` with glassmorphism
+**Desktop:** `w-10 h-10`
+
+```tsx
+className="text-white hover:text-white/80 w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-full transition-all backdrop-blur-md border border-white/20"
+```
+
+#### 17.3.6 Title Responsiveness
+
+```tsx
+className="text-white font-heading text-base sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] line-clamp-1 flex-1"
+```
+
+### 17.4 Gesture Indicator System
+
+**State Type:**
+```typescript
+const [gestureIndicator, setGestureIndicator] = useState<{
+    type: 'volume' | 'brightness' | 'seek-forward' | 'seek-backward' | 'zoom';
+    value: number | string;
+} | null>(null);
+```
+
+**Auto-hide:** 800ms timeout
+
+**Visual Placement:**
+- Volume/Seek Forward: Right side of screen
+- Brightness/Seek Backward: Left side of screen
+- Zoom: Center
+
+### 17.5 State Declarations Order
+
+**CRITICAL:** State declarations must be ordered correctly to avoid "used before declaration" errors.
+
+```typescript
+// These must be declared BEFORE resetHideControlsTimer
+const [showQualityMenu, setShowQualityMenu] = useState(false);
+const [showSubtitleMenu, setShowSubtitleMenu] = useState(false);
+
+// Then this can reference them
+const resetHideControlsTimer = useCallback(() => {
+    if (isPlaying && !showSubtitleMenu && !showQualityMenu) { ... }
+}, [isPlaying, showSubtitleMenu, showQualityMenu]);
+```
+
+### 17.6 Files Modified
+
+| File | Changes |
+|------|---------|
+| `src/components/common/MoviePlayer.tsx` | All player enhancements (800+ lines) |
+| `src/components/pages/MovieDetail/MovieDetail.tsx` | Removed duplicate close button overlay |
+
+### 17.7 Testing Checklist
+
+**Desktop:**
+- [ ] Controls auto-hide after 3s of inactivity
+- [ ] Controls stay visible when paused
+- [ ] Controls stay visible when menus open
+- [ ] Volume slider tracks cursor during drag
+- [ ] All keyboard shortcuts work
+- [ ] Subtitle menu shows all labels
+
+**Mobile:**
+- [ ] Swipe up/down on right = Volume
+- [ ] Swipe up/down on left = Brightness
+- [ ] Double-tap right = Seek +10s
+- [ ] Double-tap left = Seek -10s
+- [ ] Single tap = Show controls only
+- [ ] Pinch = Zoom toggle
+- [ ] Zoom button works
+- [ ] Menu scroll doesn't trigger gestures
+- [ ] Close button looks good
+- [ ] Title truncates properly
+
+### 17.8 Known Limitations
+
+1. **Brightness is CSS filter** - Doesn't affect system brightness, only video appearance
+2. **Zoom is toggle only** - No intermediate zoom levels (YouTube style)
+3. **No picture-in-picture** - Could be added in future
+
+---
+
+**End of Documentation**
+
+> 🎬 **For any future AI agent:** This documentation represents the WORKING state of FlixNest as of December 8, 2025.  
+>
+> **Key Breakthroughs:**
+> 1. Using `puppeteer-real-browser` instead of standard Puppeteer for Cloudflare bypass
+> 2. Deploying to Hugging Face Spaces which allows long-running browser processes
+> 3. Capturing and passing the correct `referer` header through the entire proxy chain
+> 4. Forcing HTTPS in proxy URLs because HF Spaces runs behind a reverse proxy
+> 5. **Subtitle System:** Finding the correct `prorcp` iframe (not `rcp`), using `X-User-Agent: trailers.to-UA` header for OpenSubtitles, decompressing .gz files with DecompressionStream, converting SRT→VTT, embedding as data URLs to bypass CORS/403 errors
+> 6. **MoviePlayer Mobile Adaptation:** Touch gestures for volume (right half), brightness (left half), double-tap seeking, pinch-to-zoom. Single tap shows controls only. Menus block gesture propagation.
+>
+> **Files to focus on for future changes:**
+> - `backend/scraper.js`: Lines 155-260 for subtitle extraction (`extractSubtitlesViaAPI`)
+> - `src/components/common/MoviePlayer.tsx`: Full player with gestures, controls, menus
+> - `src/components/pages/MovieDetail/MovieDetail.tsx`: Play button and player integration
+

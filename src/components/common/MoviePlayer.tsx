@@ -143,13 +143,15 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
 
     // Mobile Gesture State
     const [brightness, setBrightness] = useState(1); // 0.2 to 2.0 range
+    const [isZoomToFill, setIsZoomToFill] = useState(false); // Zoom to fill for mobile
     const [gestureIndicator, setGestureIndicator] = useState<{
-        type: 'volume' | 'brightness' | 'seek-forward' | 'seek-backward';
-        value: number;
+        type: 'volume' | 'brightness' | 'seek-forward' | 'seek-backward' | 'zoom';
+        value: number | string;
     } | null>(null);
     const touchStartRef = useRef<{ x: number; y: number; time: number; initialVolume: number; initialBrightness: number } | null>(null);
     const lastTapRef = useRef<{ time: number; x: number } | null>(null);
     const gestureIndicatorTimeoutRef = useRef<number | null>(null);
+    const initialPinchDistanceRef = useRef<number | null>(null);
 
     // Show gesture indicator with auto-hide
     const showGestureIndicatorWithTimeout = useCallback((indicator: typeof gestureIndicator) => {
@@ -164,6 +166,14 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
 
     // Touch handlers for mobile gestures
     const handleTouchStart = useCallback((e: React.TouchEvent) => {
+        // Detect pinch start (two fingers)
+        if (e.touches.length === 2) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            initialPinchDistanceRef.current = Math.sqrt(dx * dx + dy * dy);
+            return;
+        }
+
         const touch = e.touches[0];
         touchStartRef.current = {
             x: touch.clientX,
@@ -175,6 +185,27 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
     }, [volume, brightness]);
 
     const handleTouchMove = useCallback((e: React.TouchEvent) => {
+        // Handle pinch zoom (two fingers)
+        if (e.touches.length === 2 && initialPinchDistanceRef.current) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            const currentDistance = Math.sqrt(dx * dx + dy * dy);
+            const delta = currentDistance - initialPinchDistanceRef.current;
+
+            // Toggle zoom if pinch is significant
+            if (Math.abs(delta) > 50) {
+                if (delta > 0 && !isZoomToFill) {
+                    setIsZoomToFill(true);
+                    showGestureIndicatorWithTimeout({ type: 'zoom', value: 'Fill' });
+                } else if (delta < 0 && isZoomToFill) {
+                    setIsZoomToFill(false);
+                    showGestureIndicatorWithTimeout({ type: 'zoom', value: 'Fit' });
+                }
+                initialPinchDistanceRef.current = currentDistance;
+            }
+            return;
+        }
+
         // Don't handle gestures when menus are open
         if (showSubtitleMenu || showQualityMenu) return;
         if (!touchStartRef.current || !containerRef.current || !videoRef.current) return;
@@ -208,9 +239,12 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                 showGestureIndicatorWithTimeout({ type: 'brightness', value: Math.round(newBrightness * 100) });
             }
         }
-    }, [isMuted, showGestureIndicatorWithTimeout, showSubtitleMenu, showQualityMenu]);
+    }, [isMuted, showGestureIndicatorWithTimeout, showSubtitleMenu, showQualityMenu, isZoomToFill]);
 
     const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+        // Reset pinch tracking
+        initialPinchDistanceRef.current = null;
+
         // Don't handle gestures when menus are open
         if (showSubtitleMenu || showQualityMenu) {
             touchStartRef.current = null;
@@ -611,7 +645,7 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
             {/* Video Element */}
             <video
                 ref={videoRef}
-                className="w-full h-full object-contain"
+                className={`w-full h-full transition-all duration-300 ${isZoomToFill ? 'object-cover' : 'object-contain'}`}
                 style={{ filter: `brightness(${brightness})` }}
                 onClick={togglePlay}
                 onTimeUpdate={handleTimeUpdate}
@@ -676,6 +710,14 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                             <>
                                 <span className="material-symbols-outlined text-white text-4xl">replay_10</span>
                                 <span className="text-white text-sm font-medium">-{gestureIndicator.value}s</span>
+                            </>
+                        )}
+                        {gestureIndicator.type === 'zoom' && (
+                            <>
+                                <span className="material-symbols-outlined text-white text-4xl">
+                                    {gestureIndicator.value === 'Fill' ? 'zoom_out_map' : 'zoom_in_map'}
+                                </span>
+                                <span className="text-white text-sm font-medium">{gestureIndicator.value}</span>
                             </>
                         )}
                     </div>
@@ -844,6 +886,20 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                                     </div>
                                 )}
                             </div>
+
+                            {/* Zoom to Fill Button - Mobile only */}
+                            <button
+                                className="md:hidden p-1 text-white/80 hover:text-white transition-colors"
+                                onClick={() => {
+                                    setIsZoomToFill(!isZoomToFill);
+                                    showGestureIndicatorWithTimeout({ type: 'zoom', value: isZoomToFill ? 'Fit' : 'Fill' });
+                                }}
+                                title={isZoomToFill ? 'Fit to screen' : 'Fill screen'}
+                            >
+                                <span className="material-symbols-outlined text-xl">
+                                    {isZoomToFill ? 'zoom_in_map' : 'zoom_out_map'}
+                                </span>
+                            </button>
 
                             <ControlButton icon="fullscreen" size="base" onClick={toggleFullscreen} />
                         </div>
