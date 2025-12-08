@@ -857,13 +857,13 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                                 />
                                 {showSubtitleMenu && (
                                     <div
-                                        className="absolute bottom-12 right-0 w-56 md:w-80 bg-black/95 backdrop-blur-md border border-white/20 rounded-lg shadow-2xl overflow-hidden max-h-40 md:max-h-72 overflow-y-auto scrollbar-thin"
+                                        className="absolute bottom-12 right-0 w-48 md:w-80 bg-black/95 backdrop-blur-md border border-white/20 rounded-lg shadow-2xl overflow-hidden max-h-32 md:max-h-72 overflow-y-auto scrollbar-thin"
                                         onTouchStart={(e) => e.stopPropagation()}
                                         onTouchMove={(e) => e.stopPropagation()}
                                     >
-                                        <div className="px-4 py-2.5 text-xs font-bold text-white/60 uppercase border-b border-white/20 bg-white/5">Subtitles</div>
+                                        <div className="px-3 py-2 text-xs font-bold text-white/60 uppercase border-b border-white/20 bg-white/5">Subtitles</div>
                                         <button
-                                            className={`w-full text-left px-4 py-2.5 text-sm hover:bg-white/10 transition-colors ${!activeSubtitle ? 'text-green-400 font-semibold' : 'text-white'}`}
+                                            className={`w-full text-left px-3 py-2 text-xs md:text-sm hover:bg-white/10 transition-colors ${!activeSubtitle ? 'text-green-400 font-semibold' : 'text-white'}`}
                                             onClick={() => handleSubtitleChange(null)}
                                         >
                                             Off
@@ -871,7 +871,7 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                                         {extracted.subtitles?.map((sub, i) => (
                                             <button
                                                 key={i}
-                                                className={`w-full text-left px-4 py-2.5 text-sm hover:bg-white/10 transition-colors whitespace-normal break-words ${activeSubtitle === sub.file ? 'text-green-400 font-semibold' : 'text-white'}`}
+                                                className={`w-full text-left px-3 py-2 text-xs md:text-sm hover:bg-white/10 transition-colors whitespace-normal break-words ${activeSubtitle === sub.file ? 'text-green-400 font-semibold' : 'text-white'}`}
                                                 onClick={() => handleSubtitleChange(sub.file)}
                                             >
                                                 {sub.label}
@@ -890,13 +890,13 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                                 />
                                 {showQualityMenu && (
                                     <div
-                                        className="absolute bottom-12 right-0 w-28 md:w-32 bg-background-dark/95 backdrop-blur-md border border-white/10 rounded-lg shadow-xl overflow-hidden max-h-40 md:max-h-60 overflow-y-auto scrollbar-thin"
+                                        className="absolute bottom-12 right-0 w-24 md:w-32 bg-background-dark/95 backdrop-blur-md border border-white/10 rounded-lg shadow-xl overflow-hidden max-h-32 md:max-h-60 overflow-y-auto scrollbar-thin"
                                         onTouchStart={(e) => e.stopPropagation()}
                                         onTouchMove={(e) => e.stopPropagation()}
                                     >
-                                        <div className="px-3 py-2 text-xs font-bold text-white/50 uppercase border-b border-white/10">Quality</div>
+                                        <div className="px-3 py-1.5 md:py-2 text-xs font-bold text-white/50 uppercase border-b border-white/10">Quality</div>
                                         <button
-                                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${quality === -1 ? 'text-primary font-bold' : 'text-white/80'}`}
+                                            className={`w-full text-left px-3 py-1.5 md:py-2 text-xs md:text-sm hover:bg-white/10 transition-colors ${quality === -1 ? 'text-primary font-bold' : 'text-white/80'}`}
                                             onClick={() => handleQualityChange(-1)}
                                         >
                                             Auto
@@ -904,7 +904,7 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                                         {qualities.map(q => (
                                             <button
                                                 key={q.index}
-                                                className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${quality === q.index ? 'text-primary font-bold' : 'text-white/80'}`}
+                                                className={`w-full text-left px-3 py-1.5 md:py-2 text-xs md:text-sm hover:bg-white/10 transition-colors ${quality === q.index ? 'text-primary font-bold' : 'text-white/80'}`}
                                                 onClick={() => handleQualityChange(q.index)}
                                             >
                                                 {q.label}
@@ -928,15 +928,15 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                                 </button>
                                 {showSpeedMenu && (
                                     <div
-                                        className="absolute bottom-12 right-0 w-24 md:w-28 bg-background-dark/95 backdrop-blur-md border border-white/10 rounded-lg shadow-xl overflow-hidden max-h-40 md:max-h-60 overflow-y-auto scrollbar-thin"
+                                        className="absolute bottom-12 right-0 w-20 md:w-28 bg-background-dark/95 backdrop-blur-md border border-white/10 rounded-lg shadow-xl overflow-hidden max-h-32 md:max-h-60 overflow-y-auto scrollbar-thin"
                                         onTouchStart={(e) => e.stopPropagation()}
                                         onTouchMove={(e) => e.stopPropagation()}
                                     >
-                                        <div className="px-3 py-2 text-xs font-bold text-white/50 uppercase border-b border-white/10">Speed</div>
+                                        <div className="px-3 py-1.5 md:py-2 text-xs font-bold text-white/50 uppercase border-b border-white/10">Speed</div>
                                         {PLAYBACK_SPEEDS.map(speed => (
                                             <button
                                                 key={speed}
-                                                className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${playbackSpeed === speed ? 'text-primary font-bold' : 'text-white/80'}`}
+                                                className={`w-full text-left px-3 py-1.5 md:py-2 text-xs md:text-sm hover:bg-white/10 transition-colors ${playbackSpeed === speed ? 'text-primary font-bold' : 'text-white/80'}`}
                                                 onClick={() => handleSpeedChange(speed)}
                                             >
                                                 {speed === 1 ? 'Normal' : `${speed}x`}
