@@ -13,6 +13,8 @@ interface NativePlayerProps {
     poster?: string;
     autoplay?: boolean;
     onClose?: () => void;
+    nextEpisode?: { season: number; episode: number; title: string };
+    onPlayNext?: () => void;
 }
 
 // Helper to find best English subtitle
@@ -58,7 +60,9 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
     title = 'Cosmic Odyssey',
     poster,
     autoplay = true,
-    onClose
+    onClose,
+    nextEpisode,
+    onPlayNext
 }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const hlsRef = useRef<Hls | null>(null);
@@ -159,6 +163,43 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
     const lastTapRef = useRef<{ time: number; x: number } | null>(null);
     const gestureIndicatorTimeoutRef = useRef<number | null>(null);
     const initialPinchDistanceRef = useRef<number | null>(null);
+    const [nextEpisodeCountdown, setNextEpisodeCountdown] = useState<number | null>(null);
+
+    // Auto-play Next Episode Logic
+    useEffect(() => {
+        if (!duration || !currentTime || !onPlayNext || !nextEpisode) return;
+
+        const remaining = duration - currentTime;
+
+        // Trigger countdown when 5 seconds remain
+        if (remaining <= 5 && remaining > 0 && isPlaying && nextEpisodeCountdown === null) {
+            setNextEpisodeCountdown(5);
+        }
+
+        // Cancel countdown if user seeks back
+        if (remaining > 6 && nextEpisodeCountdown !== null) {
+            setNextEpisodeCountdown(null);
+        }
+    }, [currentTime, duration, isPlaying, nextEpisodeCountdown, onPlayNext, nextEpisode]);
+
+    // Handle Countdown Timer
+    useEffect(() => {
+        if (nextEpisodeCountdown === null) return;
+
+        if (nextEpisodeCountdown <= 0) {
+            if (onPlayNext) {
+                onPlayNext();
+                setNextEpisodeCountdown(null);
+            }
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            setNextEpisodeCountdown(prev => (prev !== null ? prev - 1 : null));
+        }, 1000);
+
+        return () => clearTimeout(timer);
+    }, [nextEpisodeCountdown, onPlayNext]);
 
     // Track fullscreen state changes
     useEffect(() => {
@@ -685,7 +726,13 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                 style={{ filter: `brightness(${brightness})` }}
                 onClick={togglePlay}
                 onTimeUpdate={handleTimeUpdate}
-                onEnded={() => setIsPlaying(false)}
+                onEnded={() => {
+                    setIsPlaying(false);
+                    // If no next episode (series finale), close player
+                    if (!nextEpisode && onClose) {
+                        onClose();
+                    }
+                }}
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
                 onVolumeChange={() => {
@@ -787,6 +834,37 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                     >
                         <span className="material-symbols-outlined !text-5xl">play_arrow</span>
                     </button>
+                </div>
+            )}
+
+            {/* Next Episode Overlay */}
+            {nextEpisode && (
+                <div className={`absolute bottom-20 right-4 md:bottom-24 md:right-8 z-50 transition-all duration-500 transform ${nextEpisodeCountdown !== null ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
+                    <div className="bg-black/80 backdrop-blur-md border border-white/10 rounded-lg p-4 shadow-2xl max-w-[280px]">
+                        <p className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-1">Up Next in {nextEpisodeCountdown}</p>
+                        <h4 className="text-white font-bold text-sm md:text-base line-clamp-1 mb-3">{nextEpisode.title}</h4>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setNextEpisodeCountdown(null);
+                                    if (onPlayNext) onPlayNext();
+                                }}
+                                className="flex-1 bg-white text-black py-2 px-3 rounded font-bold text-xs md:text-sm hover:bg-gray-200 transition-colors"
+                            >
+                                Play Now
+                            </button>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setNextEpisodeCountdown(null);
+                                }}
+                                className="bg-white/10 text-white py-2 px-3 rounded font-bold text-xs md:text-sm hover:bg-white/20 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -982,7 +1060,7 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

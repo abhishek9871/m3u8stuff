@@ -129,6 +129,11 @@ const TVDetail: React.FC = () => {
 
   // Play episode with stream extraction
   const playEpisode = async (season: number, episode: number) => {
+    // Update selected season if different (e.g. auto-playing next season)
+    if (season !== selectedSeason) {
+      setSelectedSeason(season);
+    }
+
     setCurrentEpisode({ season, episode });
     setIsPlaying(true);
     setExtracting(true);
@@ -198,6 +203,53 @@ const TVDetail: React.FC = () => {
     }
   };
 
+  // Next Episode Auto-play Logic
+  const getNextEpisode = () => {
+    if (!show || !show.seasons) return undefined;
+
+    const currentSeasonData = show.seasons.find(s => s.season_number === currentEpisode.season);
+    if (!currentSeasonData) return undefined;
+
+    // Case 1: Next episode in same season
+    // Note: We use episode_count from show details which is reliable
+    if (currentEpisode.episode < currentSeasonData.episode_count) {
+      let title = `Episode ${currentEpisode.episode + 1}`;
+      // Try to get refined title if we have details loaded for this season
+      if (seasonDetails && seasonDetails.season_number === currentEpisode.season) {
+        const nextEp = seasonDetails.episodes.find(e => e.episode_number === currentEpisode.episode + 1);
+        if (nextEp) title = `${nextEp.episode_number}. ${nextEp.name}`;
+      }
+      return {
+        season: currentEpisode.season,
+        episode: currentEpisode.episode + 1,
+        title: title
+      };
+    }
+
+    // Case 2: First episode of next season
+    const nextSeason = show.seasons.find(s => s.season_number === currentEpisode.season + 1);
+    // Ensure season exists and has episodes
+    if (nextSeason && nextSeason.episode_count > 0) {
+      return {
+        season: nextSeason.season_number,
+        episode: 1,
+        title: `Season ${nextSeason.season_number} Episode 1`
+      };
+    }
+
+    return undefined;
+  };
+
+  const nextEpisodeInfo = getNextEpisode();
+
+  const handlePlayNext = () => {
+    if (nextEpisodeInfo) {
+      playEpisode(nextEpisodeInfo.season, nextEpisodeInfo.episode);
+    } else {
+      handleClosePlayer();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-bg-primary">
       {/* Netflix-style Hero Section */}
@@ -224,6 +276,8 @@ const TVDetail: React.FC = () => {
                   poster={show.backdrop_path ? `${TMDB_IMAGE_BASE_URL}/w780${show.backdrop_path}` : undefined}
                   autoplay={true}
                   onClose={handleClosePlayer}
+                  nextEpisode={nextEpisodeInfo}
+                  onPlayNext={handlePlayNext}
                 />
               </div>
             )}
