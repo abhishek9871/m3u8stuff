@@ -206,7 +206,7 @@ const MovieDetail: React.FC = () => {
                   {/* Metadata Row */}
                   <div className="flex items-center gap-3 text-sm md:text-base text-white/90">
                     <span className="flex items-center gap-1 text-green-400 font-semibold">
-                      <FaStar className="text-yellow-400" /> {movie.vote_average.toFixed(1)}
+                      <span className="text-yellow-400"><FaStar /></span> {movie.vote_average.toFixed(1)}
                     </span>
                     <span className="text-white/60">|</span>
                     <span>{year}</span>
