@@ -88,6 +88,11 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
     const [showSubtitleMenu, setShowSubtitleMenu] = useState(false);
     const [subtitlesReady, setSubtitlesReady] = useState(false);
 
+    // Playback Speed State
+    const [playbackSpeed, setPlaybackSpeed] = useState(1);
+    const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+    const PLAYBACK_SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -103,12 +108,12 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
         }
 
         // Only set timer to hide if playing AND no menus are open
-        if (isPlaying && !showSubtitleMenu && !showQualityMenu) {
+        if (isPlaying && !showSubtitleMenu && !showQualityMenu && !showSpeedMenu) {
             hideControlsTimeoutRef.current = window.setTimeout(() => {
                 setShowControls(false);
             }, HIDE_CONTROLS_DELAY);
         }
-    }, [isPlaying, showSubtitleMenu, showQualityMenu]);
+    }, [isPlaying, showSubtitleMenu, showQualityMenu, showSpeedMenu]);
 
     // Handle mouse movement to show controls
     const handleMouseMove = useCallback(() => {
@@ -207,7 +212,7 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
         }
 
         // Don't handle gestures when menus are open
-        if (showSubtitleMenu || showQualityMenu) return;
+        if (showSubtitleMenu || showQualityMenu || showSpeedMenu) return;
         if (!touchStartRef.current || !containerRef.current || !videoRef.current) return;
 
         const touch = e.touches[0];
@@ -246,7 +251,7 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
         initialPinchDistanceRef.current = null;
 
         // Don't handle gestures when menus are open
-        if (showSubtitleMenu || showQualityMenu) {
+        if (showSubtitleMenu || showQualityMenu || showSpeedMenu) {
             touchStartRef.current = null;
             return;
         }
@@ -561,6 +566,15 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
             document.removeEventListener('mouseup', handleVolumeMouseUp);
         };
     }, [isVolumeScrubbing, handleVolumeMouseMove, handleVolumeMouseUp]);
+
+    // Playback speed change handler
+    const handleSpeedChange = (speed: number) => {
+        if (videoRef.current) {
+            videoRef.current.playbackRate = speed;
+            setPlaybackSpeed(speed);
+        }
+        setShowSpeedMenu(false);
+    };
 
     // Keyboard controls
     useEffect(() => {
@@ -881,6 +895,38 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                                                 onClick={() => handleQualityChange(q.index)}
                                             >
                                                 {q.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Playback Speed Button */}
+                            <div className="relative">
+                                <button
+                                    className={`p-1 md:p-2 text-white/80 hover:text-white transition-colors flex items-center gap-0.5 ${playbackSpeed !== 1 ? 'text-primary' : ''}`}
+                                    onClick={() => { setShowSpeedMenu(!showSpeedMenu); setShowQualityMenu(false); setShowSubtitleMenu(false); }}
+                                    title="Playback speed"
+                                >
+                                    <span className="material-symbols-outlined text-xl md:text-2xl">speed</span>
+                                    {playbackSpeed !== 1 && (
+                                        <span className="text-xs font-bold">{playbackSpeed}x</span>
+                                    )}
+                                </button>
+                                {showSpeedMenu && (
+                                    <div
+                                        className="absolute bottom-12 right-0 w-28 bg-background-dark/95 backdrop-blur-md border border-white/10 rounded-lg shadow-xl overflow-hidden"
+                                        onTouchStart={(e) => e.stopPropagation()}
+                                        onTouchMove={(e) => e.stopPropagation()}
+                                    >
+                                        <div className="px-3 py-2 text-xs font-bold text-white/50 uppercase border-b border-white/10">Speed</div>
+                                        {PLAYBACK_SPEEDS.map(speed => (
+                                            <button
+                                                key={speed}
+                                                className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors ${playbackSpeed === speed ? 'text-primary font-bold' : 'text-white/80'}`}
+                                                onClick={() => handleSpeedChange(speed)}
+                                            >
+                                                {speed === 1 ? 'Normal' : `${speed}x`}
                                             </button>
                                         ))}
                                     </div>
