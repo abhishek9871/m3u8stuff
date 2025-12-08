@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Hls from 'hls.js';
 import type { ExtractedStream, SubtitleTrack } from '../../types/stream';
+import { VideoEnhancer } from '../../utils/VideoEnhancer';
 import './NativePlayer.css';
 
 // Volume adjustment step for keyboard controls
@@ -99,6 +100,15 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
     const [playbackSpeed, setPlaybackSpeed] = useState(1);
     const [showSpeedMenu, setShowSpeedMenu] = useState(false);
     const PLAYBACK_SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+
+    // Video Enhancement State
+    const [enhancementEnabled, setEnhancementEnabled] = useState(() => {
+        const saved = localStorage.getItem('videoEnhancement');
+        return saved === 'true';
+    });
+    const enhancerRef = useRef<VideoEnhancer | null>(null);
+    const enhancedCanvasRef = useRef<HTMLCanvasElement>(null);
+    const [enhancementSupported] = useState(() => VideoEnhancer.isSupported());
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -470,6 +480,43 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
         };
     }, [extracted.m3u8Url]);
 
+    // Video Enhancement Initialization
+    useEffect(() => {
+        if (!enhancementSupported || !enhancedCanvasRef.current) return;
+
+        const enhancer = new VideoEnhancer();
+        const initialized = enhancer.initialize(enhancedCanvasRef.current);
+
+        if (initialized) {
+            enhancerRef.current = enhancer;
+        }
+
+        return () => {
+            if (enhancerRef.current) {
+                enhancerRef.current.destroy();
+                enhancerRef.current = null;
+            }
+        };
+    }, [enhancementSupported]);
+
+    // Start/Stop enhancement based on state and playback
+    useEffect(() => {
+        if (!enhancerRef.current || !videoRef.current) return;
+
+        if (enhancementEnabled && isPlaying) {
+            enhancerRef.current.start(videoRef.current);
+        } else {
+            enhancerRef.current.stop();
+        }
+    }, [enhancementEnabled, isPlaying]);
+
+    // Toggle enhancement handler
+    const toggleEnhancement = useCallback(() => {
+        const newValue = !enhancementEnabled;
+        setEnhancementEnabled(newValue);
+        localStorage.setItem('videoEnhancement', String(newValue));
+    }, [enhancementEnabled]);
+
     // Handle Subtitles
     const addSubtitleTracks = (video: HTMLVideoElement) => {
         if (!extracted.subtitles || extracted.subtitles.length === 0) {
@@ -763,6 +810,15 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                 }}
             />
 
+            {/* Enhanced Video Canvas (WebGL) */}
+            {enhancementSupported && (
+                <canvas
+                    ref={enhancedCanvasRef}
+                    className={`absolute inset-0 w-full h-full transition-opacity duration-300 pointer-events-none ${enhancementEnabled && isPlaying ? 'opacity-100' : 'opacity-0'} ${isZoomToFill ? 'object-cover' : 'object-contain'}`}
+                    style={{ filter: `brightness(${brightness})` }}
+                />
+            )}
+
             {/* Loading Spinner */}
             {loading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-50">
@@ -964,6 +1020,17 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                         </div>
 
                         <div className="flex items-center gap-2 relative">
+                            {/* Video Enhancement Toggle */}
+                            {enhancementSupported && (
+                                <button
+                                    onClick={toggleEnhancement}
+                                    className={`p-1 md:p-2 transition-colors ${enhancementEnabled ? 'text-accent-primary' : 'text-white/80 hover:text-white'}`}
+                                    title={enhancementEnabled ? 'Video Enhancement ON' : 'Video Enhancement OFF'}
+                                >
+                                    <span className="material-symbols-outlined text-xl md:text-2xl">auto_fix_high</span>
+                                </button>
+                            )}
+
                             {/* Subtitles Button */}
                             <div className="relative">
                                 <ControlButton
