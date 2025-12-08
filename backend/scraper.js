@@ -10,12 +10,13 @@ app.use(cors());
 app.use(express.json());
 
 // Providers List - Priority Order
+// Updated to use official API parameters
 const PROVIDERS = [
     {
         name: 'vidsrc-embed.ru',
         getUrl: (id, type, s, e) => type === 'movie'
-            ? `https://vidsrc-embed.ru/embed/movie/${id}`
-            : `https://vidsrc-embed.ru/embed/tv/${id}/${s}/${e}`
+            ? `https://vidsrc-embed.ru/embed/movie?tmdb=${id}` // Official API format
+            : `https://vidsrc-embed.ru/embed/tv?tmdb=${id}&season=${s}&episode=${e}`
     },
     {
         name: 'vidsrc.cc',
@@ -34,7 +35,7 @@ async function getBrowser() {
         return { browser: browserInstance, page: pageInstance };
     }
 
-    console.log('[Browser] 🚀 Launching Real Browser (First Run)...');
+    console.log('[Browser] 🚀 Launching Real Browser (Stealth)...');
     const { browser, page } = await connect({
         headless: false, // Required for Xvfb / Real Browser
         turnstile: true, // Auto-solve
@@ -55,6 +56,21 @@ async function getBrowser() {
     // Global Network Interceptor preparation
     await page.setRequestInterception(true);
     page.on('request', req => req.continue());
+
+    // 🛡️ POPUP KILLER - Essential for vidsrc-embed
+    browser.on('targetcreated', async (target) => {
+        if (target.type() === 'page') {
+            try {
+                const newPage = await target.page();
+                // Close any new page that isn't the main extraction page
+                if (newPage && newPage !== page) {
+                    // console.log('[Browser] 🚨 Popup detected. Closing...');
+                    await newPage.close();
+                    if (page && !page.isClosed()) await page.bringToFront();
+                }
+            } catch (e) { }
+        }
+    });
 
     return { browser, page };
 }
@@ -84,17 +100,16 @@ app.get('/api/extract', async (req, res) => {
     const responseHandler = (response) => {
         const url = response.url();
         if ((url.includes('.m3u8') || url.includes('.mp4')) && !url.includes('sk-')) {
-            // Prioritize master.m3u8 (Multi-quality playlist)
-            // If we already found a master playlist, ignore others.
-            // If we haven't found anything, take this.
-            // If we have a non-master, and this IS a master, take this (upgrade).
 
-            const isMaster = url.includes('master.m3u8');
+            const isMaster = url.includes('master.m3u8') || url.includes('playlist.m3u8');
+            const isIndex = url.includes('index.m3u8'); // Often 720p/480p single quality
             const hasExisting = !!foundMedia;
-            const existingIsMaster = hasExisting && foundMedia.includes('master.m3u8');
+            const existingIsMaster = hasExisting && (foundMedia.includes('master.m3u8') || foundMedia.includes('playlist.m3u8'));
 
+            // LOGIC: Always upgrade to Master if we only have an Index/low-res
+            // If we have nothing, take whatever we find first (as backup)
             if (!hasExisting || (isMaster && !existingIsMaster)) {
-                console.log(`[Target] 🎯 Found Media (Upgrade: ${isMaster}): ${url}`);
+                console.log(`[Target] 🎯 Found Media (Master: ${isMaster}): ${url}`);
                 foundMedia = url;
 
                 // Capture the referer from the request that triggered this response
@@ -112,7 +127,11 @@ app.get('/api/extract', async (req, res) => {
 
     // Loop through providers
     for (const provider of PROVIDERS) {
-        if (foundMedia) break;
+        // If we found a MASTER playlist, we are done. Stop strictly.
+        if (foundMedia && (foundMedia.includes('master.m3u8') || foundMedia.includes('playlist.m3u8'))) break;
+
+        // If we found ANY media, we might want to try one more provider just to be sure we can't find a master, purely for quality.
+        // But for speed, let's say if we have a provider working, we stick with it unless we missed Master.
 
         const targetUrl = provider.getUrl(tmdbId, type, season, episode);
         console.log(`[Extract] Trying source: ${provider.name} -> ${targetUrl}`);
@@ -123,25 +142,29 @@ app.get('/api/extract', async (req, res) => {
             // Interaction: Check/solve Cloudflare or Click Play
             await handlePageInteraction(page, provider.name);
 
-            // Wait up to 45 seconds for M3U8 (Increased from 15s)
+            // Wait up to 30 seconds for M3U8 (Increased from 15s)
             let attempts = 0;
-            const MAX_ATTEMPTS = 45;
+            const MAX_ATTEMPTS = 30;
 
-            // Smart Selection: Wait a bit after finding FIRST media to see if BETTER media (master.m3u8) arrives
+            // Smart Selection: Wait loop
             while (attempts < MAX_ATTEMPTS) {
                 if (foundMedia) {
-                    // If we found the Gold Standard (master.m3u8), stop immediately
-                    if (foundMedia.includes('master.m3u8')) break;
+                    // GOLD STANDARD: "master.m3u8"
+                    if (foundMedia.includes('master.m3u8') || foundMedia.includes('playlist.m3u8')) {
+                        console.log('[Extract] 🌟 Secured Master Playlist. Exiting wait.');
+                        break;
+                    }
 
-                    // If we have non-master media, wait up to 3 more seconds to see if master appears
-                    // This prevents grabbing a low-quality index.m3u8 that might load first
+                    // Lower Standard: found "index.m3u8" (usually 720p or specific quality)
+                    // Wait up to 5 seconds to see if a Master playlist loads immediately after
                     let buffer = 0;
-                    while (buffer < 3 && !foundMedia.includes('master.m3u8') && attempts < MAX_ATTEMPTS) {
+                    while (buffer < 5 && !foundMedia.includes('master.m3u8') && attempts < MAX_ATTEMPTS) {
                         await new Promise(r => setTimeout(r, 1000));
                         buffer++;
                         attempts++;
                     }
-                    break; // Done waiting
+                    console.log('[Extract] ⚠️ Settling for available playlist (possibly non-Master).');
+                    break;
                 }
 
                 await new Promise(r => setTimeout(r, 1000));
@@ -150,6 +173,8 @@ app.get('/api/extract', async (req, res) => {
 
             if (foundMedia) {
                 usedProvider = provider.name;
+                // If we found *something*, we consider this provider a success. 
+                // We only loop to next provider if foundMedia is STILL null.
                 break;
             } else {
                 console.log(`[Extract] ❌ No media found on ${provider.name} after ${attempts}s, trying next...`);
@@ -181,41 +206,56 @@ app.get('/api/extract', async (req, res) => {
 });
 
 async function handlePageInteraction(page, providerName) {
-    // 1. Cloudflare Check
+    // 1. Cloudflare Check (Aggressive)
     const title = await page.title();
-    if (title.includes('Just a moment') || title.includes('Cloudflare')) {
+    if (title.includes('Just a moment') || title.includes('Cloudflare') || title.includes('Attention')) {
         console.log('[Clicker] 🛡️ Cloudflare detected. Jiggling...');
         try {
             await page.mouse.move(100, 100);
             await page.mouse.move(200, 200);
             await page.mouse.click(200, 200); // Blind click
 
-            // Try searching for frames
+            // Look for IFRAMES (Turnstile)
             const frames = page.frames();
             for (const f of frames) {
-                if (f.url().includes('turnstile')) {
+                if (f.url().includes('turnstile') || f.url().includes('challenge')) {
                     const box = await f.boundingBox('body');
                     if (box) await page.mouse.click(box.x + 10, box.y + 10);
                 }
             }
         } catch (e) { }
-        await new Promise(r => setTimeout(r, 5000));
+        await new Promise(r => setTimeout(r, 4000));
     }
 
-    // 2. Play Button Click (Crucial for vidsrc.xyz)
+    // 2. Play Button Click (Crucial for vidsrc)
     try {
         console.log('[Clicker] Looking for Play button...');
-        // Common selectors for vidsrc players
-        const playSelectors = ['#player_code', '.play-btn', '#play-button', 'div[class*="play"]', 'button'];
+        // Expanded selectors for new API/Player skins
+        const playSelectors = [
+            '#player_code',
+            '.play-btn',
+            '#play-button',
+            'div[class*="play"]',
+            'button[class*="play"]',
+            '.jw-display-icon-container', // JW Player common
+            'video'
+        ];
+
         for (const sel of playSelectors) {
-            const el = await page.$(sel);
-            if (el && await el.isVisible()) {
-                await el.click();
-                console.log(`[Clicker] Clicked ${sel}`);
-                await new Promise(r => setTimeout(r, 500));
-            }
+            try {
+                const el = await page.$(sel);
+                if (el && await el.isVisible()) {
+                    await el.click();
+                    console.log(`[Clicker] Clicked ${sel}`);
+                    await new Promise(r => setTimeout(r, 1000)); // Wait for reaction
+
+                    // Sometimes a second click is needed (unmute/start)
+                    await el.click().catch(() => { });
+                }
+            } catch (e) { }
         }
-        // Center click backup
+
+        // Center click backup - often works for overlays
         await page.mouse.click(640, 360);
     } catch (e) { }
 }
@@ -227,49 +267,36 @@ app.get('/api/proxy/m3u8', async (req, res) => {
 
     const decodedUrl = decodeURIComponent(url);
     const decodedReferer = referer ? decodeURIComponent(referer) : null;
-    console.log('[Proxy] Fetching M3U8:', decodedUrl);
-    console.log('[Proxy] Using Referer:', decodedReferer);
+
+    // Log less to avoid spamming console
+    // console.log('[Proxy] Fetching M3U8:', decodedUrl);
 
     try {
-        // Determine base URL for resolving relative paths
         const urlObj = new URL(decodedUrl);
         const baseUrl = decodedUrl.substring(0, decodedUrl.lastIndexOf('/') + 1);
-
-        // Use the captured referer from extraction, or fallback to embed URL
         const effectiveReferer = decodedReferer || 'https://vidsrc-embed.ru/';
 
         const response = await axios({
             method: 'get',
             url: decodedUrl,
-            responseType: 'text', // Get as text to rewrite URLs
+            responseType: 'text',
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'Referer': effectiveReferer,
                 'Origin': new URL(effectiveReferer).origin,
-                'Accept': '*/*',
-                'Accept-Language': 'en-US,en;q=0.9',
-                'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-                'sec-ch-ua-mobile': '?0',
-                'sec-ch-ua-platform': '"Windows"',
-                'sec-fetch-dest': 'empty',
-                'sec-fetch-mode': 'cors',
-                'sec-fetch-site': 'cross-site'
+                'Accept': '*/*'
             }
         });
 
         let content = response.data;
-        // Force HTTPS - HF Spaces reverse proxy reports 'http' but frontend uses HTTPS
         const proxyBase = `https://${req.get('host')}`;
-
-        // Rewrite URLs in M3U8 content, preserving the referer chain
         const refererParam = effectiveReferer ? `&referer=${encodeURIComponent(effectiveReferer)}` : '';
+
         const lines = content.split('\n');
         const rewrittenLines = lines.map(line => {
             const trimmed = line.trim();
 
-            // Skip empty lines, comments, and tags (except URI= attributes)
             if (!trimmed || trimmed.startsWith('#')) {
-                // Handle #EXT-X-KEY and #EXT-X-MAP with URI attributes
                 if (trimmed.includes('URI="')) {
                     return trimmed.replace(/URI="([^"]+)"/g, (match, uri) => {
                         const absoluteUri = uri.startsWith('http') ? uri : new URL(uri, baseUrl).href;
@@ -279,16 +306,13 @@ app.get('/api/proxy/m3u8', async (req, res) => {
                 return line;
             }
 
-            // This is a URL line (segment or playlist)
             let absoluteUrl;
-            if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+            if (trimmed.startsWith('http')) {
                 absoluteUrl = trimmed;
             } else {
-                // Resolve relative URL against base
                 absoluteUrl = new URL(trimmed, baseUrl).href;
             }
 
-            // Determine if it's a segment (.ts, .m4s) or another playlist (.m3u8)
             if (absoluteUrl.includes('.m3u8') || absoluteUrl.includes('.M3U8')) {
                 return `${proxyBase}/api/proxy/m3u8?url=${encodeURIComponent(absoluteUrl)}${refererParam}`;
             } else {
@@ -296,22 +320,17 @@ app.get('/api/proxy/m3u8', async (req, res) => {
             }
         });
 
-        const rewrittenContent = rewrittenLines.join('\n');
-        console.log('[Proxy] M3U8 rewritten, lines:', rewrittenLines.length);
-
-        // CORS headers
         res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
         res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
-        res.send(rewrittenContent);
+        res.send(rewrittenLines.join('\n'));
 
     } catch (e) {
         console.error('[Proxy] M3U8 Error:', e.message);
-        res.status(500).send('Proxy Error: ' + e.message);
+        res.status(500).send('Proxy Error');
     }
 });
 
-// 🎬 SEGMENT PROXY - For .ts video segments
+// 🎬 SEGMENT PROXY
 app.get('/api/proxy/segment', async (req, res) => {
     const { url, referer } = req.query;
     if (!url) return res.status(400).send('No URL');
@@ -328,19 +347,14 @@ app.get('/api/proxy/segment', async (req, res) => {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'Referer': decodedReferer,
                 'Origin': new URL(decodedReferer).origin,
-                'Accept': '*/*',
-                'Accept-Language': 'en-US,en;q=0.9'
+                'Accept': '*/*'
             },
             timeout: 30000
         });
 
-        // Copy headers
         if (response.headers['content-type']) res.setHeader('Content-Type', response.headers['content-type']);
         if (response.headers['content-length']) res.setHeader('Content-Length', response.headers['content-length']);
-
-        // CORS
         res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
 
         response.data.pipe(res);
     } catch (e) {
