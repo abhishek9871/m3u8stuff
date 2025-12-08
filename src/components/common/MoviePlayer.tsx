@@ -72,9 +72,55 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
     const [volume, setVolume] = useState(1);
     const [isMuted, setIsMuted] = useState(false);
     const [isHovering, setIsHovering] = useState(false);
+    const [showControls, setShowControls] = useState(true);
     const [isScrubbing, setIsScrubbing] = useState(false);
     const [isVolumeScrubbing, setIsVolumeScrubbing] = useState(false);
     const volumeBarRef = useRef<HTMLDivElement>(null);
+    const hideControlsTimeoutRef = useRef<number | null>(null);
+
+    // Auto-hide controls after inactivity
+    const HIDE_CONTROLS_DELAY = 3000; // 3 seconds
+
+    const resetHideControlsTimer = useCallback(() => {
+        setShowControls(true);
+
+        // Clear existing timeout
+        if (hideControlsTimeoutRef.current) {
+            window.clearTimeout(hideControlsTimeoutRef.current);
+        }
+
+        // Only set timer to hide if playing
+        if (isPlaying) {
+            hideControlsTimeoutRef.current = window.setTimeout(() => {
+                setShowControls(false);
+            }, HIDE_CONTROLS_DELAY);
+        }
+    }, [isPlaying]);
+
+    // Handle mouse movement to show controls
+    const handleMouseMove = useCallback(() => {
+        resetHideControlsTimer();
+    }, [resetHideControlsTimer]);
+
+    // Reset timer when play state changes
+    useEffect(() => {
+        if (!isPlaying) {
+            // When paused, always show controls
+            setShowControls(true);
+            if (hideControlsTimeoutRef.current) {
+                window.clearTimeout(hideControlsTimeoutRef.current);
+            }
+        } else {
+            // When playing, start the hide timer
+            resetHideControlsTimer();
+        }
+
+        return () => {
+            if (hideControlsTimeoutRef.current) {
+                window.clearTimeout(hideControlsTimeoutRef.current);
+            }
+        };
+    }, [isPlaying, resetHideControlsTimer]);
 
     // Quality State
     const [quality, setQuality] = useState<number>(-1);
@@ -427,9 +473,11 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
         <div
             ref={containerRef}
             tabIndex={0}
-            className="flex items-center justify-center w-full h-full bg-black group relative overflow-hidden font-display outline-none"
+            className="flex items-center justify-center w-full h-full bg-black group relative overflow-hidden font-display outline-none cursor-none"
+            style={{ cursor: showControls ? 'default' : 'none' }}
             onMouseEnter={() => setIsHovering(true)}
-            onMouseLeave={() => setIsHovering(false)}
+            onMouseLeave={() => { setIsHovering(false); setShowControls(false); }}
+            onMouseMove={handleMouseMove}
         >
             {/* Video Element */}
             <video
@@ -456,10 +504,10 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
             )}
 
             {/* Gradient Overlay */}
-            <div className={`absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/50 transition-opacity duration-300 pointer-events-none ${isHovering || !isPlaying ? 'opacity-100' : 'opacity-0'}`}></div>
+            <div className={`absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/50 transition-opacity duration-300 pointer-events-none ${showControls || !isPlaying ? 'opacity-100' : 'opacity-0'}`}></div>
 
             {/* Top Controls (Title + Close) - Always visible on hover or pause */}
-            <div className={`absolute top-0 left-0 right-0 p-6 transition-opacity duration-300 ${isHovering || !isPlaying ? 'opacity-100' : 'opacity-0'}`}>
+            <div className={`absolute top-0 left-0 right-0 p-6 transition-opacity duration-300 ${showControls || !isPlaying ? 'opacity-100' : 'opacity-0'}`}>
                 <div className="flex justify-between items-start">
                     <h2 className="text-white font-heading text-2xl md:text-3xl font-bold tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">{title}</h2>
                     {onClose && (
@@ -482,9 +530,8 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                 </div>
             )}
 
-            {/* Bottom Control Bar */}
-            {/* Bottom Control Bar - Only visible on hover */}
-            <div className={`absolute bottom-0 left-0 right-0 p-4 transition-opacity duration-300 ${isHovering ? 'opacity-100' : 'opacity-0'}`}>
+            {/* Bottom Control Bar - Auto-hide during playback */}
+            <div className={`absolute bottom-0 left-0 right-0 p-4 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
                 <div className="flex flex-col gap-3">
 
                     {/* Timeline */}
