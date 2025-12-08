@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { FaPlay, FaInfoCircle, FaStar, FaTv, FaFilm } from 'react-icons/fa';
 import type { ContentItem } from '../../../types';
@@ -11,14 +11,114 @@ interface HeroSectionProps {
 
 const HeroSection: React.FC<HeroSectionProps> = ({ items }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef<{ x: number; time: number } | null>(null);
+  const autoPlayRef = useRef<number | null>(null);
+
+  // Reset auto-play timer
+  const resetAutoPlay = useCallback(() => {
+    if (autoPlayRef.current) {
+      clearInterval(autoPlayRef.current);
+    }
+    if (items.length > 1) {
+      autoPlayRef.current = window.setInterval(() => {
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % items.length);
+      }, 7000);
+    }
+  }, [items.length]);
 
   useEffect(() => {
-    if (items.length <= 1) return;
-    const timer = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % items.length);
-    }, 7000);
-    return () => clearInterval(timer);
-  }, [items]);
+    resetAutoPlay();
+    return () => {
+      if (autoPlayRef.current) clearInterval(autoPlayRef.current);
+    };
+  }, [resetAutoPlay]);
+
+  // Navigate to specific slide
+  const goToSlide = useCallback((index: number) => {
+    setCurrentIndex(index);
+    resetAutoPlay();
+  }, [resetAutoPlay]);
+
+  // Navigate to next/prev slide
+  const goToNext = useCallback(() => {
+    setCurrentIndex((prev) => (prev + 1) % items.length);
+    resetAutoPlay();
+  }, [items.length, resetAutoPlay]);
+
+  const goToPrev = useCallback(() => {
+    setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
+    resetAutoPlay();
+  }, [items.length, resetAutoPlay]);
+
+  // Touch handlers for swipe
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    dragStartRef.current = { x: e.touches[0].clientX, time: Date.now() };
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!dragStartRef.current) return;
+
+    const deltaX = e.changedTouches[0].clientX - dragStartRef.current.x;
+    const deltaTime = Date.now() - dragStartRef.current.time;
+
+    // Swipe threshold: at least 50px or fast swipe (velocity > 0.3px/ms)
+    const velocity = Math.abs(deltaX) / deltaTime;
+    if (Math.abs(deltaX) > 50 || velocity > 0.3) {
+      if (deltaX < 0) {
+        goToNext();
+      } else {
+        goToPrev();
+      }
+    }
+
+    dragStartRef.current = null;
+  }, [goToNext, goToPrev]);
+
+  // Mouse handlers for desktop drag
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Ignore if clicking on buttons or links
+    if ((e.target as HTMLElement).closest('a, button')) return;
+
+    setIsDragging(true);
+    dragStartRef.current = { x: e.clientX, time: Date.now() };
+    e.preventDefault();
+  }, []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging) return;
+    e.preventDefault();
+  }, [isDragging]);
+
+  const handleMouseUp = useCallback((e: React.MouseEvent) => {
+    if (!isDragging || !dragStartRef.current) {
+      setIsDragging(false);
+      return;
+    }
+
+    const deltaX = e.clientX - dragStartRef.current.x;
+    const deltaTime = Date.now() - dragStartRef.current.time;
+
+    // Drag threshold
+    const velocity = Math.abs(deltaX) / deltaTime;
+    if (Math.abs(deltaX) > 50 || velocity > 0.3) {
+      if (deltaX < 0) {
+        goToNext();
+      } else {
+        goToPrev();
+      }
+    }
+
+    setIsDragging(false);
+    dragStartRef.current = null;
+  }, [isDragging, goToNext, goToPrev]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (isDragging) {
+      setIsDragging(false);
+      dragStartRef.current = null;
+    }
+  }, [isDragging]);
 
   if (items.length === 0) {
     return <div className="h-screen bg-bg-secondary flex items-center justify-center"><Loader /></div>;
@@ -31,7 +131,15 @@ const HeroSection: React.FC<HeroSectionProps> = ({ items }) => {
   const year = releaseDate ? new Date(releaseDate).getFullYear() : 'N/A';
 
   return (
-    <div className="relative h-screen w-full">
+    <div
+      className={`relative h-screen w-full ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
+    >
       {items.map((item, index) => (
         <div
           key={item.id}
@@ -40,14 +148,15 @@ const HeroSection: React.FC<HeroSectionProps> = ({ items }) => {
           <img
             src={`${TMDB_IMAGE_BASE_URL}/original${item.backdrop_path}`}
             alt={'title' in item ? item.title : item.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover pointer-events-none select-none"
             loading="lazy"
+            draggable={false}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/70 to-transparent"></div>
         </div>
       ))}
 
-      <div className="relative z-10 flex flex-col justify-end h-full container mx-auto px-4 pb-20 md:pb-32">
+      <div className="relative z-10 flex flex-col justify-end h-full container mx-auto px-4 pb-36 md:pb-56">
         <div key={activeItem.id} className="max-w-3xl text-white">
           <h1 className="text-4xl md:text-6xl font-bold font-heading mb-4 animate-fade-in-down">{title}</h1>
           <div className="flex items-center flex-wrap gap-4 mb-4 text-text-secondary animate-fade-in-up">
@@ -76,12 +185,17 @@ const HeroSection: React.FC<HeroSectionProps> = ({ items }) => {
           </div>
         </div>
       </div>
-      <div className="absolute bottom-16 md:bottom-28 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+
+      {/* Dot Indicators - Positioned higher to clear the negative margin of the next section */}
+      <div className="absolute bottom-24 md:bottom-40 left-1/2 -translate-x-1/2 z-20 flex gap-3">
         {items.map((_, index) => (
           <button
             key={index}
-            onClick={() => setCurrentIndex(index)}
-            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${index === currentIndex ? 'bg-white scale-125' : 'bg-white/50'}`}
+            onClick={() => goToSlide(index)}
+            className={`transition-all duration-300 rounded-full ${index === currentIndex
+              ? 'w-8 h-2.5 bg-accent-primary shadow-lg shadow-accent-primary/50'
+              : 'w-2.5 h-2.5 bg-white/40 hover:bg-white/70'
+              }`}
             aria-label={`Go to slide ${index + 1}`}
           />
         ))}
