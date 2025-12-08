@@ -71,6 +71,7 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
     const [duration, setDuration] = useState(0);
     const [volume, setVolume] = useState(1);
     const [isMuted, setIsMuted] = useState(false);
+    const [showRemainingTime, setShowRemainingTime] = useState(false);
     const [isHovering, setIsHovering] = useState(false);
     const [showControls, setShowControls] = useState(true);
     const [isScrubbing, setIsScrubbing] = useState(false);
@@ -496,8 +497,15 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
     };
 
     const formatTime = (time: number) => {
-        const minutes = Math.floor(time / 60);
-        const seconds = Math.floor(time % 60);
+        if (!isFinite(time) || isNaN(time)) return "0:00";
+        const totalSeconds = Math.floor(time);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = Math.floor(totalSeconds % 60);
+
+        if (hours > 0) {
+            return `${hours}:${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        }
         return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
     };
 
@@ -843,7 +851,16 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                             <div className="flex items-center text-white/80 text-xs font-medium tracking-wider pl-1 md:pl-2 font-mono">
                                 <span>{formatTime(currentTime)}</span>
                                 <span className="px-0.5">/</span>
-                                <span>{formatTime(duration)}</span>
+                                <span
+                                    className="cursor-pointer hover:text-white transition-colors"
+                                    onClick={() => setShowRemainingTime(!showRemainingTime)}
+                                    title={showRemainingTime ? "Show Total Time" : "Show Remaining Time"}
+                                >
+                                    {showRemainingTime
+                                        ? `-${formatTime(duration - currentTime)}`
+                                        : formatTime(duration)
+                                    }
+                                </span>
                             </div>
                         </div>
 
