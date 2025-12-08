@@ -17,13 +17,14 @@
 6. [Backend Scraper (Hugging Face Spaces)](#6-backend-scraper-hugging-face-spaces)
 7. [Frontend Integration](#7-frontend-integration)
 8. [Critical Fixes Applied](#8-critical-fixes-applied)
-9. [Deployment Guide](#9-deployment-guide)
-10. [API Reference](#10-api-reference)
-11. [Failed Approaches (What NOT to Do)](#11-failed-approaches-what-not-to-do)
-12. [Troubleshooting Guide](#12-troubleshooting-guide)
-13. [Environment Variables](#13-environment-variables)
-14. [Local Development](#14-local-development)
-15. [Design System](#15-design-system)
+9. [Subtitle System (Complete Implementation)](#9-subtitle-system-complete-implementation)
+10. [Deployment Guide](#10-deployment-guide)
+11. [API Reference](#11-api-reference)
+12. [Failed Approaches (What NOT to Do)](#12-failed-approaches-what-not-to-do)
+13. [Troubleshooting Guide](#13-troubleshooting-guide)
+14. [Environment Variables](#14-environment-variables)
+15. [Local Development](#15-local-development)
+16. [Design System](#16-design-system)
 
 ---
 
@@ -34,6 +35,7 @@
 **FlixNest** is a modern streaming web application that provides:
 - Movie and TV show browsing via TMDB API
 - **Native HLS video playback** with quality selection (360p, 720p, 1080p)
+- **Subtitle support** for movies AND TV series (English, via OpenSubtitles API)
 - Watchlist and episode tracking
 - Ad-free viewing experience
 
@@ -51,6 +53,8 @@
 ✅ **Proxy Chain** - All requests routed through backend to bypass CORS  
 ✅ **Referer Handling** - Correct referer (`cloudnestra.com`) passed for auth  
 ✅ **HTTPS Enforcement** - Proxy URLs use HTTPS to avoid Mixed Content errors  
+✅ **Subtitles (Movies)** - 10-15 English subtitles from OpenSubtitles API  
+✅ **Subtitles (TV Series)** - Season/episode aware subtitle extraction  
 
 ---
 
@@ -657,7 +661,360 @@ const { browser, page } = await connect({
 
 ---
 
-## 9. Deployment Guide
+## 9. Subtitle System (Complete Implementation)
+
+> **Last Updated:** December 8, 2025  
+> **Status:** ✅ FULLY WORKING for Movies and TV Series
+
+### 9.1 Overview
+
+FlixNest extracts and displays subtitles from OpenSubtitles directly within the native player. Subtitles are:
+- Fetched in real-time from the OpenSubtitles API
+- Converted from SRT to VTT format (required for HTML5 `<track>` elements)
+- Embedded as base64 data URLs (no external proxy needed)
+- Filterable by English language
+
+### 9.2 Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         SUBTITLE EXTRACTION FLOW                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   1. Scraper finds `prorcp` iframe in vidsrc-embed.ru                       │
+│                        │                                                    │
+│                        ▼                                                    │
+│   2. Extract IMDB ID from `data-i` attribute on <body>                      │
+│      For TV: also extract `data-s` (season), `data-e` (episode)             │
+│                        │                                                    │
+│                        ▼                                                    │
+│   3. Call OpenSubtitles API (inside browser context):                       │
+│      Movies: /search/imdbid-{id}/sublanguageid-eng                          │
+│      TV:     /search/episode-{e}/imdbid-{id}/season-{s}/sublanguageid-eng   │
+│                        │                                                    │
+│                        ▼                                                    │
+│   4. For each subtitle result:                                              │
+│      a. Fetch .gz file from SubDownloadLink                                 │
+│      b. Decompress using DecompressionStream API                            │
+│      c. Convert SRT → VTT format                                            │
+│      d. Encode as base64 data URL                                           │
+│                        │                                                    │
+│                        ▼                                                    │
+│   5. Return subtitles array with embedded VTT content to frontend           │
+│                        │                                                    │
+│                        ▼                                                    │
+│   6. Frontend adds <track> elements to video, enables by label              │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 9.3 Backend Implementation (`backend/scraper.js`)
+
+#### 9.3.1 Finding the Player Frame
+
+**Critical Discovery:** The `vidsrc-embed.ru` page contains multiple iframes. The correct frame for subtitle data is the `prorcp` frame (not `rcp`):
+
+```javascript
+// Line 157-164 in scraper.js
+const extractSubtitlesViaAPI = async (page, reqSeason, reqEpisode) => {
+    try {
+        // CRITICAL: Prefer prorcp (player) over rcp frames
+        // prorcp frame has correct data-i, data-s, data-e attributes
+        let playerFrame = page.frames().find(f => f.url().includes('prorcp'));
+        if (!playerFrame) {
+            playerFrame = page.frames().find(f => f.url().includes('cloudnestra') || f.url().includes('hash='));
+        }
+        if (!playerFrame) return [];
+```
+
+**Why `prorcp`?** Investigation revealed multiple cloudnestra frames:
+- Frame 1 (`rcp`): Has malformed IMDB ID like `4574334_1x1` ❌
+- Frame 3 (`prorcp`): Has correct IMDB ID `4574334` + season/episode data ✅
+
+#### 9.3.2 IMDB ID Extraction
+
+**For Movies:** The IMDB ID is in `document.body.getAttribute('data-i')`
+
+**For TV Series:** Additional attributes `data-s` (season) and `data-e` (episode)
+
+```javascript
+// Line 170-178 in scraper.js
+let id = document.body.getAttribute('data-i');
+if (!id) return [];
+
+// Clean IMDB ID - remove any suffix like "_1x1"
+id = id.split('_')[0];
+
+// Use passed season/episode if available, otherwise try data attributes
+const season = s || document.body.getAttribute('data-s');
+const episode = e || document.body.getAttribute('data-e');
+```
+
+#### 9.3.3 OpenSubtitles API Call
+
+```javascript
+// Line 180-192 in scraper.js
+let apiUrl;
+if (season && episode) {
+    // TV Series - include season and episode in URL
+    apiUrl = `https://rest.opensubtitles.org/search/episode-${episode}/imdbid-${id}/season-${season}/sublanguageid-eng`;
+    console.log('[Subtitles] TV Mode: S' + season + 'E' + episode);
+} else {
+    // Movie - just IMDB ID
+    apiUrl = `https://rest.opensubtitles.org/search/imdbid-${id}/sublanguageid-eng`;
+    console.log('[Subtitles] Movie Mode');
+}
+
+const response = await fetch(apiUrl, {
+    headers: { 'X-User-Agent': 'trailers.to-UA' }  // REQUIRED header
+});
+```
+
+**Key Points:**
+- The `X-User-Agent: trailers.to-UA` header is **REQUIRED** by OpenSubtitles
+- Without it, API returns 403 Forbidden
+- This header was discovered by reverse-engineering `subtitles_pjs.js`
+
+#### 9.3.4 Fetching & Decompressing Subtitles
+
+OpenSubtitles returns `.gz` compressed files. They must be decompressed in the browser:
+
+```javascript
+// Line 199-224 in scraper.js
+for (const sub of limitedData) {
+    const subResponse = await fetch(sub.SubDownloadLink, {
+        headers: { 'X-User-Agent': 'trailers.to-UA' }
+    });
+
+    if (subResponse.ok) {
+        let text;
+        
+        // Handle gzip compressed files
+        if (sub.SubDownloadLink.includes('.gz')) {
+            // Use DecompressionStream to decompress gzip
+            const ds = new DecompressionStream('gzip');
+            const decompressedStream = subResponse.body.pipeThrough(ds);
+            const reader = decompressedStream.getReader();
+            const chunks = [];
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+            }
+            
+            // Combine chunks and decode as text
+            const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+            const combined = new Uint8Array(totalLength);
+            let offset = 0;
+            for (const chunk of chunks) {
+                combined.set(chunk, offset);
+                offset += chunk.length;
+            }
+            text = new TextDecoder('utf-8').decode(combined);
+        } else {
+            text = await subResponse.text();
+        }
+```
+
+**Why DecompressionStream?** 
+- Browser's `fetch` doesn't auto-decompress `.gz` files
+- Must manually decompress using Web Streams API
+- This happens in browser context, not Node.js
+
+#### 9.3.5 SRT to VTT Conversion
+
+HTML5 `<track>` elements **only accept VTT format**. SRT must be converted:
+
+```javascript
+// Line 226-234 in scraper.js
+// Convert SRT to VTT format (required for HTML5 <track> elements)
+if (sub.SubFormat === 'srt' || sub.SubDownloadLink.includes('.srt') || !text.startsWith('WEBVTT')) {
+    text = 'WEBVTT\n\n' + text
+        // Convert SRT timestamps (00:00:00,000) to VTT format (00:00:00.000)
+        .replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2')
+        // Remove SRT numeric cue identifiers (lines with just a number)
+        .replace(/^\d+\s*$/gm, '');
+}
+```
+
+**Differences between SRT and VTT:**
+| Feature | SRT | VTT |
+|---------|-----|-----|
+| Header | None | `WEBVTT` required |
+| Timestamp separator | `,` | `.` |
+| Cue identifiers | Required (numeric) | Optional |
+
+#### 9.3.6 Base64 Data URL Encoding
+
+To avoid CORS issues and 403 errors, subtitle content is embedded as data URLs:
+
+```javascript
+// Line 236-240 in scraper.js
+// Create data URL with VTT MIME type
+const base64 = btoa(unescape(encodeURIComponent(text)));
+const dataUrl = 'data:text/vtt;base64,' + base64;
+
+found.push({
+    label: label,
+    file: dataUrl  // No external URL, no proxy needed!
+});
+```
+
+**Benefits of data URLs:**
+- No CORS issues
+- No 403 errors from OpenSubtitles
+- Instant loading (content already embedded)
+- No need for proxy endpoint
+
+### 9.4 Frontend Implementation (`NativePlayer.tsx`)
+
+#### 9.4.1 Adding Track Elements
+
+```typescript
+// Line 327-344 in NativePlayer.tsx
+function addSubtitleTracks(video: HTMLVideoElement) {
+    if (!extracted.subtitles || extracted.subtitles.length === 0) {
+        setSubtitlesReady(true);
+        return;
+    }
+
+    console.log('[NativePlayer] Adding', extracted.subtitles.length, 'subtitle tracks');
+
+    // Add track elements for each subtitle
+    extracted.subtitles.forEach((sub, index) => {
+        const track = document.createElement('track');
+        track.kind = 'subtitles';
+        track.label = sub.label;
+        track.srclang = sub.label.toLowerCase().substring(0, 2);
+        track.src = sub.file;  // Data URL with embedded VTT
+        track.default = false;
+        video.appendChild(track);
+    });
+}
+```
+
+#### 9.4.2 Subtitle Selection (Fixed)
+
+**Original Bug:** Selection used array index which could de-sync with video.textTracks
+
+**Fix:** Match by label instead:
+
+```typescript
+// Line 92-119 in NativePlayer.tsx
+const handleSubtitleChange = useCallback((subtitleFile: string | null) => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // Disable all tracks first
+    for (let i = 0; i < video.textTracks.length; i++) {
+        video.textTracks[i].mode = 'disabled';
+    }
+
+    if (subtitleFile) {
+        // Find the matching subtitle from our list
+        const targetSub = extracted.subtitles?.find(s => s.file === subtitleFile);
+        if (targetSub) {
+            // Match track by label (more reliable than index)
+            for (let i = 0; i < video.textTracks.length; i++) {
+                if (video.textTracks[i].label === targetSub.label) {
+                    video.textTracks[i].mode = 'showing';
+                    console.log('[NativePlayer] Enabled subtitle by label:', targetSub.label);
+                    break;
+                }
+            }
+        }
+    }
+
+    setActiveSubtitle(subtitleFile);
+    setShowSubtitleMenu(false);
+}, [extracted.subtitles]);
+```
+
+### 9.5 Key Discoveries from Reverse Engineering
+
+#### Discovery 1: The `subtitles_pjs.js` File
+
+The player uses a JavaScript file at `https://cloudnestra.com/subtitles_pjs_24.04.js` that contains:
+- OpenSubtitles API call logic
+- The required `X-User-Agent` header
+- SRT to VTT conversion (via pako.js decompression)
+
+#### Discovery 2: Frame Structure
+
+```
+vidsrc-embed.ru
+├── Frame 0: Main page (has data-i, data-s, data-e)
+├── Frame 1: cloudnestra.com/rcp/... (WRONG: data-i has "_1x1" suffix)
+├── Frame 2: about:blank
+├── Frame 3: cloudnestra.com/prorcp/... (CORRECT: clean data-i + PlayerJS)
+├── Frame 4: about:blank
+└── Frame 5+: Ad/tracking frames
+```
+
+#### Discovery 3: PlayerJS Globals
+
+The `prorcp` frame has these subtitle-related globals:
+- `the_subtitles` - Array of loaded subtitle strings
+- `db_subs` - Database of subtitles
+- `getSubtitle(el)` - Function to load a subtitle
+- `showSubtitles()` - Toggle subtitle menu
+- `addSubtitle(sub)` - Add subtitle to player
+
+### 9.6 Subtitle Limits
+
+| Setting | Value | Reason |
+|---------|-------|--------|
+| Max subtitles | 15 | Avoid timeout during fetch |
+| Language filter | English only | User requirement |
+| Format filter | SRT, VTT | Other formats not supported |
+
+### 9.7 Troubleshooting Subtitles
+
+#### Problem: 0 subtitles for TV series
+
+**Cause:** Wrong frame being used (has `_1x1` suffix on IMDB ID)  
+**Fix:** Ensure code prefers `prorcp` frame over `rcp` frame
+
+#### Problem: 403 Forbidden on subtitle download
+
+**Cause:** Missing `X-User-Agent` header  
+**Fix:** Add `headers: { 'X-User-Agent': 'trailers.to-UA' }` to fetch
+
+#### Problem: Subtitles not displaying in player
+
+**Cause:** SRT format not converted to VTT  
+**Fix:** Ensure VTT header and timestamp conversion applied
+
+#### Problem: Subtitle selection doesn't change track
+
+**Cause:** Using array index instead of label matching  
+**Fix:** Match by `video.textTracks[i].label === targetSub.label`
+
+#### Problem: Garbled/binary subtitles
+
+**Cause:** Gzip file not decompressed  
+**Fix:** Use `DecompressionStream('gzip')` in browser context
+
+### 9.8 Test Commands
+
+```bash
+# Test movie subtitle extraction (Tron: Ares)
+curl "http://localhost:7860/api/extract?tmdbId=533533&type=movie" -o test.json
+node -e "const d=JSON.parse(require('fs').readFileSync('test.json')); console.log('Subtitles:', d.subtitles?.length)"
+
+# Test TV series subtitle extraction (Stranger Things S1E1)
+curl "http://localhost:7860/api/extract?tmdbId=66732&type=tv&season=1&episode=1" -o test_tv.json
+node -e "const d=JSON.parse(require('fs').readFileSync('test_tv.json')); console.log('Subtitles:', d.subtitles?.length)"
+```
+
+**Expected Results:**
+- Movies: 10-15 subtitles
+- TV Series: 5-15 subtitles (depends on availability)
+
+---
+
+## 10. Deployment Guide
 
 ### Frontend Deployment (Cloudflare Pages)
 
@@ -998,6 +1355,7 @@ curl "https://abhishek1996-flixnest-scraper.hf.space/api/extract?tmdbId=701387&t
 
 | Date | Version | Changes |
 |------|---------|---------|
+| Dec 8, 2025 | 3.0 | Complete Subtitle System: OpenSubtitles API integration, TV series support, gzip decompression, SRT→VTT conversion, data URL embedding, label-based track selection |
 | Dec 8, 2025 | 2.0 | Complete rewrite with working production solution, HTTPS fix, referer handling |
 | Dec 6, 2025 | 1.0 | Initial documentation |
 
@@ -1005,4 +1363,23 @@ curl "https://abhishek1996-flixnest-scraper.hf.space/api/extract?tmdbId=701387&t
 
 **End of Documentation**
 
-> 🎬 **For any future AI agent:** This documentation represents the WORKING state of FlixNest as of December 8, 2025. The key breakthroughs were: (1) Using `puppeteer-real-browser` instead of standard Puppeteer for Cloudflare bypass, (2) Deploying to Hugging Face Spaces which allows long-running browser processes, (3) Capturing and passing the correct `referer` header through the entire proxy chain, and (4) Forcing HTTPS in proxy URLs because HF Spaces runs behind a reverse proxy that reports `http` internally.
+> 🎬 **For any future AI agent:** This documentation represents the WORKING state of FlixNest as of December 8, 2025.  
+>
+> **Key Breakthroughs:**
+> 1. Using `puppeteer-real-browser` instead of standard Puppeteer for Cloudflare bypass
+> 2. Deploying to Hugging Face Spaces which allows long-running browser processes
+> 3. Capturing and passing the correct `referer` header through the entire proxy chain
+> 4. Forcing HTTPS in proxy URLs because HF Spaces runs behind a reverse proxy
+> 5. **Subtitle System:** Finding the correct `prorcp` iframe (not `rcp`), using `X-User-Agent: trailers.to-UA` header for OpenSubtitles, decompressing .gz files with DecompressionStream, converting SRT→VTT, embedding as data URLs to bypass CORS/403 errors
+>
+> **Files to focus on for future changes:**
+> - `backend/scraper.js`: Lines 155-260 for subtitle extraction (`extractSubtitlesViaAPI`)
+> - `src/components/common/NativePlayer.tsx`: Lines 92-119 for subtitle selection (`handleSubtitleChange`)
+>
+> **Testing commands for subtitles:**
+> ```bash
+> # Movie test (Tron: Ares)
+> curl "http://localhost:7860/api/extract?tmdbId=533533&type=movie"
+> # TV test (Stranger Things S1E1)
+> curl "http://localhost:7860/api/extract?tmdbId=66732&type=tv&season=1&episode=1"
+> ```
