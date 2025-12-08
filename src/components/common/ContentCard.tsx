@@ -19,7 +19,7 @@ const ContentCard: React.FC<ContentCardProps> = ({ item }) => {
     : 'https://picsum.photos/500/750?grayscale';
 
   return (
-    <Link to={`/${mediaType}/${item.id}`} className="block group relative overflow-hidden rounded-lg shadow-lg bg-surface transition-transform duration-300 ease-in-out transform hover:scale-105 hover:z-10">
+    <Link to={`/${mediaType}/${item.id}?autoplay=true`} className="block group relative overflow-hidden rounded-lg shadow-lg bg-surface transition-transform duration-300 ease-in-out transform hover:scale-105 hover:z-10">
       <img
         src={posterUrl}
         alt={title}

@@ -29,6 +29,7 @@ const TVDetail: React.FC = () => {
   const [useFallbackIframe, setUseFallbackIframe] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const seasonDropdownRef = useRef<HTMLDivElement>(null);
+  const autoplayTriggeredRef = useRef(false);
   const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useWatchlist();
   const { isEpisodeWatched, toggleEpisodeWatched } = useWatchedEpisodes();
 
@@ -57,10 +58,6 @@ const TVDetail: React.FC = () => {
           const initialSeason = data.seasons.find(s => s.season_number > 0)?.season_number || 1;
           setSelectedSeason(initialSeason);
         }
-        // Start playback after data loads if autoplay is set
-        if (autoplay) {
-          setIsPlaying(true);
-        }
       } catch (err) {
         setError('Failed to fetch show details.');
         console.error(err);
@@ -69,7 +66,7 @@ const TVDetail: React.FC = () => {
       }
     };
     fetchShow();
-  }, [id, autoplay]);
+  }, [id]);
 
   useEffect(() => {
     const fetchSeason = async () => {
@@ -86,6 +83,21 @@ const TVDetail: React.FC = () => {
     };
     fetchSeason();
   }, [id, show, selectedSeason]);
+
+  // Trigger autoplay after show and season data is loaded - plays S1E1
+  useEffect(() => {
+    if (autoplay && show && seasonDetails && !autoplayTriggeredRef.current && !loading && !seasonLoading) {
+      autoplayTriggeredRef.current = true;
+      // Get the first episode of the first available season
+      const firstSeason = show.seasons?.find(s => s.season_number > 0)?.season_number || 1;
+      const firstEpisode = seasonDetails.episodes?.[0]?.episode_number || 1;
+      console.log('[TVDetail] Autoplay triggered for S' + firstSeason + 'E' + firstEpisode);
+      // Trigger play with a small delay to ensure component is ready
+      setTimeout(() => {
+        playEpisode(firstSeason, firstEpisode);
+      }, 100);
+    }
+  }, [autoplay, show, seasonDetails, loading, seasonLoading]);
 
   if (loading) {
     return (

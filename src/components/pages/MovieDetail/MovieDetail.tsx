@@ -24,6 +24,7 @@ const MovieDetail: React.FC = () => {
   const [useFallbackIframe, setUseFallbackIframe] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useWatchlist();
+  const autoplayTriggeredRef = React.useRef(false);
 
   // Ad blocker is now handled globally in App.tsx
 
@@ -35,10 +36,6 @@ const MovieDetail: React.FC = () => {
       try {
         const data = await tmdbService.getMovieDetails(id);
         setMovie(data);
-        // Start playback after data loads if autoplay is set
-        if (autoplay) {
-          setIsPlaying(true);
-        }
       } catch (err) {
         setError('Failed to fetch movie details.');
         console.error(err);
@@ -47,7 +44,52 @@ const MovieDetail: React.FC = () => {
       }
     };
     fetchMovie();
-  }, [id, autoplay]);
+  }, [id]);
+
+  // Trigger autoplay after movie data is loaded
+  useEffect(() => {
+    if (autoplay && movie && !autoplayTriggeredRef.current && !loading) {
+      autoplayTriggeredRef.current = true;
+      // Trigger play with a small delay to ensure component is ready
+      setTimeout(() => {
+        triggerPlay(movie.id);
+      }, 100);
+    }
+  }, [autoplay, movie, loading]);
+
+  // Core play function that performs stream extraction
+  const triggerPlay = async (movieId: number) => {
+    setIsPlaying(true);
+    setExtracting(true);
+    setUseFallbackIframe(false);
+    setExtractedStream(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    try {
+      console.log('[MovieDetail] Starting stream extraction for:', movieId);
+      const result = await streamExtractor.extract({
+        type: 'movie',
+        tmdbId: movieId.toString(),
+      });
+
+      console.log('[MovieDetail] Extraction result:', result);
+
+      if (result.success && result.extractedStream) {
+        console.log('[MovieDetail] Using MoviePlayer with m3u8:', result.extractedStream.m3u8Url.substring(0, 80));
+        setExtractedStream(result.extractedStream);
+        setUseFallbackIframe(false);
+      } else {
+        // Fallback to iframe
+        console.log('[MovieDetail] Falling back to iframe');
+        setUseFallbackIframe(true);
+      }
+    } catch (err) {
+      console.error('[MovieDetail] Extraction error:', err);
+      setUseFallbackIframe(true);
+    } finally {
+      setExtracting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -86,36 +128,7 @@ const MovieDetail: React.FC = () => {
       setUseFallbackIframe(false);
       return;
     }
-
-    setIsPlaying(true);
-    setExtracting(true);
-    setUseFallbackIframe(false);
-    setExtractedStream(null);
-
-    try {
-      console.log('[MovieDetail] Starting stream extraction for:', movie.id);
-      const result = await streamExtractor.extract({
-        type: 'movie',
-        tmdbId: movie.id.toString(),
-      });
-
-      console.log('[MovieDetail] Extraction result:', result);
-
-      if (result.success && result.extractedStream) {
-        console.log('[MovieDetail] Using NativePlayer with m3u8:', result.extractedStream.m3u8Url.substring(0, 80));
-        setExtractedStream(result.extractedStream);
-        setUseFallbackIframe(false);
-      } else {
-        // Fallback to iframe
-        console.log('[MovieDetail] Falling back to iframe');
-        setUseFallbackIframe(true);
-      }
-    } catch (err) {
-      console.error('[MovieDetail] Extraction error:', err);
-      setUseFallbackIframe(true);
-    } finally {
-      setExtracting(false);
-    }
+    triggerPlay(movie.id);
   };
 
   // Close player
