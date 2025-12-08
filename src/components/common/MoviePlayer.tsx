@@ -15,6 +15,7 @@ interface NativePlayerProps {
     onClose?: () => void;
     nextEpisode?: { season: number; episode: number; title: string };
     onPlayNext?: () => void;
+    shouldEnterFullscreen?: boolean;
 }
 
 // Helper to find best English subtitle
@@ -62,7 +63,8 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
     autoplay = true,
     onClose,
     nextEpisode,
-    onPlayNext
+    onPlayNext,
+    shouldEnterFullscreen = false
 }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const hlsRef = useRef<Hls | null>(null);
@@ -216,6 +218,17 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
     }, []);
+
+    // Restore fullscreen when new episode loads if needed
+    useEffect(() => {
+        if (shouldEnterFullscreen && containerRef.current && !document.fullscreenElement) {
+            // Small delay to ensure video is ready
+            const timer = setTimeout(() => {
+                containerRef.current?.requestFullscreen().catch(() => { });
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [shouldEnterFullscreen, extracted.m3u8Url]);
 
     // Show gesture indicator with auto-hide
     const showGestureIndicatorWithTimeout = useCallback((indicator: typeof gestureIndicator) => {
@@ -846,7 +859,7 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
 
             {/* Next Episode Overlay */}
             {nextEpisode && (
-                <div className={`absolute bottom-20 left-1/2 md:left-auto md:bottom-24 md:right-8 z-50 transition-all duration-500 transform ${nextEpisodeCountdown !== null ? 'opacity-100 -translate-x-1/2 translate-y-0 md:translate-x-0' : 'opacity-0 -translate-x-1/2 translate-y-10 md:translate-x-0 pointer-events-none'}`}>
+                <div className={`absolute bottom-12 left-1/2 md:left-auto md:bottom-24 md:right-8 z-50 transition-all duration-500 transform ${nextEpisodeCountdown !== null ? 'opacity-100 -translate-x-1/2 translate-y-0 md:translate-x-0' : 'opacity-0 -translate-x-1/2 translate-y-10 md:translate-x-0 pointer-events-none'}`}>
                     <div className="bg-black/80 backdrop-blur-md border border-white/10 rounded-lg p-4 shadow-2xl max-w-[280px]">
                         <p className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-1">Up Next in {nextEpisodeCountdown}</p>
                         <h4 className="text-white font-bold text-sm md:text-base line-clamp-1 mb-3">{nextEpisode.title}</h4>

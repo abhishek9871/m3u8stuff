@@ -32,6 +32,16 @@ const TVDetail: React.FC = () => {
   const autoplayTriggeredRef = useRef(false);
   const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useWatchlist();
   const { isEpisodeWatched, toggleEpisodeWatched } = useWatchedEpisodes();
+  const [shouldBeFullscreen, setShouldBeFullscreen] = useState(false);
+
+  // Track fullscreen state globally to maintain it across episode changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setShouldBeFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   // Ad blocker is now handled globally in App.tsx
 
@@ -278,6 +288,7 @@ const TVDetail: React.FC = () => {
                   onClose={handleClosePlayer}
                   nextEpisode={nextEpisodeInfo}
                   onPlayNext={handlePlayNext}
+                  shouldEnterFullscreen={shouldBeFullscreen}
                 />
               </div>
             )}
