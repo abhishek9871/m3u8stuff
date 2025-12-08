@@ -328,7 +328,7 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                 showGestureIndicatorWithTimeout({ type: 'brightness', value: Math.round(newBrightness * 100) });
             }
         }
-    }, [isMuted, showGestureIndicatorWithTimeout, showSubtitleMenu, showQualityMenu, isZoomToFill]);
+    }, [isMuted, showGestureIndicatorWithTimeout, showSubtitleMenu, showQualityMenu, showSpeedMenu, isZoomToFill, isFullscreen]);
 
     const handleTouchEnd = useCallback((e: React.TouchEvent) => {
         // Reset pinch tracking
