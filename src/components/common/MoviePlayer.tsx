@@ -839,8 +839,7 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                                 <ControlButton
                                     icon="closed_caption"
                                     size="base"
-                                    className={activeSubtitle ? 'text-primary hover:text-primary-light' : ''}
-                                    onClick={() => { setShowSubtitleMenu(!showSubtitleMenu); setShowQualityMenu(false); }}
+                                    onClick={() => { setShowSubtitleMenu(!showSubtitleMenu); setShowQualityMenu(false); setShowSpeedMenu(false); }}
                                 />
                                 {showSubtitleMenu && (
                                     <div
@@ -904,7 +903,7 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                             {/* Playback Speed Button */}
                             <div className="relative">
                                 <button
-                                    className={`p-1 md:p-2 text-white/80 hover:text-white transition-colors flex items-center gap-0.5 ${playbackSpeed !== 1 ? 'text-primary' : ''}`}
+                                    className="p-1 md:p-2 text-white/80 hover:text-white transition-colors flex items-center gap-0.5"
                                     onClick={() => { setShowSpeedMenu(!showSpeedMenu); setShowQualityMenu(false); setShowSubtitleMenu(false); }}
                                     title="Playback speed"
                                 >
