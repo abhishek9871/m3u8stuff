@@ -164,6 +164,13 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
     const gestureIndicatorTimeoutRef = useRef<number | null>(null);
     const initialPinchDistanceRef = useRef<number | null>(null);
     const [nextEpisodeCountdown, setNextEpisodeCountdown] = useState<number | null>(null);
+    const countdownCancelledRef = useRef(false);
+
+    // Reset cancelled state when episode changes
+    useEffect(() => {
+        countdownCancelledRef.current = false;
+        setNextEpisodeCountdown(null);
+    }, [nextEpisode?.season, nextEpisode?.episode]);
 
     // Auto-play Next Episode Logic
     useEffect(() => {
@@ -171,8 +178,8 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
 
         const remaining = duration - currentTime;
 
-        // Trigger countdown when 5 seconds remain
-        if (remaining <= 5 && remaining > 0 && isPlaying && nextEpisodeCountdown === null) {
+        // Trigger countdown when 5 seconds remain (only if not cancelled)
+        if (remaining <= 5 && remaining > 0 && isPlaying && nextEpisodeCountdown === null && !countdownCancelledRef.current) {
             setNextEpisodeCountdown(5);
         }
 
@@ -857,6 +864,7 @@ export const MoviePlayer: React.FC<NativePlayerProps> = ({
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
+                                    countdownCancelledRef.current = true;
                                     setNextEpisodeCountdown(null);
                                 }}
                                 className="bg-white/10 text-white py-2 px-3 rounded font-bold text-xs md:text-sm hover:bg-white/20 transition-colors"
